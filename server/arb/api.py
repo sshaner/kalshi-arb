@@ -5,6 +5,7 @@ import time
 from typing import Any
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 
 from . import arb_engine, config, matcher, paper
@@ -51,6 +52,7 @@ def _top_size(book: dict, side: str) -> float | None:
 
 def create_app(db, scanner, pusher) -> FastAPI:
     app = FastAPI(title="kalshi-arb", dependencies=[Depends(_auth)])
+    app.add_middleware(GZipMiddleware, minimum_size=1024)
 
     def details(k: dict | None, p: dict | None) -> dict | None:
         return matcher.match_details(k, p) if k and p else None

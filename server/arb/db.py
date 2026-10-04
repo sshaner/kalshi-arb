@@ -87,27 +87,37 @@ CREATE TABLE IF NOT EXISTS devices (token TEXT PRIMARY KEY, created_at REAL, las
 
 
 class Db:
+    """Thread-safe SQLite access. Each thread gets its own connection: with WAL, the API's reads never wait
+    for discovery's bulk writes (a single shared connection + lock stalled the app for seconds every 30 min)."""
+
     def __init__(self, path: str = config.DB_PATH):
-        self.conn = sqlite3.connect(path, check_same_thread=False, isolation_level=None)
-        self.conn.row_factory = sqlite3.Row
-        self.conn.execute("PRAGMA journal_mode=WAL")
-        self.conn.execute("PRAGMA foreign_keys=ON")
+        self.path = path
+        self._local = threading.local()
         self.conn.executescript(SCHEMA)
-        self.lock = threading.Lock()
+
+    @property
+    def conn(self) -> sqlite3.Connection:
+        c = getattr(self._local, "conn", None)
+        if c is None:
+            c = sqlite3.connect(self.path, isolation_level=None, timeout=30)
+            c.row_factory = sqlite3.Row
+            c.execute("PRAGMA journal_mode=WAL")
+            c.execute("PRAGMA synchronous=NORMAL")
+            c.execute("PRAGMA busy_timeout=30000")
+            c.execute("PRAGMA foreign_keys=ON")
+            self._local.conn = c
+        return c
 
     # -- generic -------------------------------------------------------------
     def q(self, sql: str, args: tuple = ()) -> list[dict]:
-        with self.lock:
-            return [dict(r) for r in self.conn.execute(sql, args).fetchall()]
+        return [dict(r) for r in self.conn.execute(sql, args).fetchall()]
 
     def one(self, sql: str, args: tuple = ()) -> dict | None:
         rows = self.q(sql, args)
         return rows[0] if rows else None
 
     def x(self, sql: str, args: tuple = ()) -> int:
-        with self.lock:
-            cur = self.conn.execute(sql, args)
-            return cur.lastrowid
+        return self.conn.execute(sql, args).lastrowid
 
     # -- settings ------------------------------------------------------------
     def settings(self) -> dict[str, Any]:
@@ -124,29 +134,35 @@ class Db:
         return self.settings()
 
     # -- markets -------------------------------------------------------------
+    UPSERT_CHUNK = 5000
+
     def upsert_markets(self, venue: str, markets: list[VenueMarket]) -> None:
+        """Bulk save in short transactions so other writers (price loop, API) never wait more than a moment.
+        Markets not seen in this pass are marked closed at the end, so readers never see a half-updated state."""
         now = time.time()
-        with self.lock:
-            self.conn.execute("BEGIN")
-            try:
-                self.conn.execute("UPDATE markets SET open = 0 WHERE venue = ?", (venue,))
-                self.conn.executemany(
-                    """INSERT INTO markets (venue, market_id, event_title, title, alt_title, flipped, close_time,
-                                            event_time, url, rules, yes_ask, no_ask, fee_multiplier, open, updated_at)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
-                       ON CONFLICT(venue, market_id) DO UPDATE SET
-                         event_title=excluded.event_title, title=excluded.title, alt_title=excluded.alt_title, flipped=excluded.flipped,
-                         close_time=excluded.close_time,
-                         event_time=excluded.event_time, url=excluded.url, rules=excluded.rules,
-                         yes_ask=excluded.yes_ask, no_ask=excluded.no_ask, fee_multiplier=excluded.fee_multiplier,
-                         open=1, updated_at=excluded.updated_at""",
-                    [(m.venue, m.market_id, m.event_title, m.title, m.alt_title, int(m.flipped), m.close_time, m.event_time, m.url, m.rules,
-                      m.yes_ask, m.no_ask, m.fee_multiplier, now) for m in markets],
-                )
-                self.conn.execute("COMMIT")
-            except Exception:
-                self.conn.execute("ROLLBACK")
-                raise
+        rows = [(m.venue, m.market_id, m.event_title, m.title, m.alt_title, int(m.flipped), m.close_time, m.event_time,
+                 m.url, m.rules, m.yes_ask, m.no_ask, m.fee_multiplier, now) for m in markets]
+        for i in range(0, len(rows), self.UPSERT_CHUNK):
+            self._tx(lambda c, chunk=rows[i:i + self.UPSERT_CHUNK]: c.executemany(
+                """INSERT INTO markets (venue, market_id, event_title, title, alt_title, flipped, close_time,
+                                        event_time, url, rules, yes_ask, no_ask, fee_multiplier, open, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+                   ON CONFLICT(venue, market_id) DO UPDATE SET
+                     event_title=excluded.event_title, title=excluded.title, alt_title=excluded.alt_title,
+                     flipped=excluded.flipped, close_time=excluded.close_time, event_time=excluded.event_time,
+                     url=excluded.url, rules=excluded.rules, yes_ask=excluded.yes_ask, no_ask=excluded.no_ask,
+                     fee_multiplier=excluded.fee_multiplier, open=1, updated_at=excluded.updated_at""", chunk))
+        self.x("UPDATE markets SET open = 0 WHERE venue = ? AND open = 1 AND updated_at < ?", (venue, now))
+
+    def _tx(self, work) -> None:
+        c = self.conn
+        c.execute("BEGIN IMMEDIATE")
+        try:
+            work(c)
+            c.execute("COMMIT")
+        except Exception:
+            c.execute("ROLLBACK")
+            raise
 
     def market(self, venue: str, market_id: str) -> dict | None:
         return self.one("SELECT * FROM markets WHERE venue = ? AND market_id = ?", (venue, market_id))
@@ -160,11 +176,10 @@ class Db:
 
     def add_candidates(self, rows: list[tuple[str, str, float, float | None, bool]]) -> None:
         now = time.time()
-        with self.lock:
-            self.conn.executemany(
-                "INSERT OR IGNORE INTO candidates (kalshi_id, pmus_id, score, est_cost, inverted, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                [(*r, now) for r in rows])
+        self._tx(lambda c: c.executemany(
+            "INSERT OR IGNORE INTO candidates (kalshi_id, pmus_id, score, est_cost, inverted, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            [(*r, now) for r in rows]))
 
     def active_pairs(self) -> list[dict]:
         return self.q("SELECT * FROM pairs WHERE status = 'active' AND paused = 0")

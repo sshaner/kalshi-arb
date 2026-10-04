@@ -254,3 +254,12 @@ def test_match_details_orientations():
     kp = {**base, "event_title": "USC vs Penn State", "title": "Penn State"}
     assert matcher.match_details(kp, h2h)["orientation"] == "inverse_head_to_head"
     assert matcher.match_details({**kp, "title": "USC"}, h2h)["orientation"] == "same"
+
+
+def test_upsert_marks_unseen_markets_closed(tmp_path):
+    from arb.models import VenueMarket
+    db = Db(str(tmp_path / "t.db"))
+    mk = lambda mid: VenueMarket("kalshi", mid, "E", "T", "", "", "u")
+    db.upsert_markets("kalshi", [mk("A"), mk("B")])
+    db.upsert_markets("kalshi", [mk("B")])
+    assert {m["market_id"] for m in db.open_markets("kalshi")} == {"B"}

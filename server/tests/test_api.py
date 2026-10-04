@@ -91,3 +91,10 @@ def test_flags_are_json_booleans(client):
         assert cand[side]["flipped"] is True and cand[side]["open"] is True
     assert isinstance(cand["inverted"], bool)
     assert isinstance(cand["match_details"]["flipped"], bool)
+
+
+def test_responses_are_gzipped(client):
+    c, db = client
+    db.add_candidates([(f"K{i}", f"P{i}", 90.0, 1.0, False) for i in range(50)])
+    r = c.get("/api/candidates", headers={**AUTH, "Accept-Encoding": "gzip"})
+    assert r.headers.get("content-encoding") == "gzip"

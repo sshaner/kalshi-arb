@@ -2,7 +2,9 @@
 import asyncio
 import json
 import logging
+import multiprocessing
 import time
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 
 import httpx
@@ -15,6 +17,13 @@ from .venues.kalshi import KalshiClient
 from .venues.polymarket_us import PolymarketUSClient
 
 log = logging.getLogger(__name__)
+
+
+def _match_in_process(db_path: str, min_score: float, window_days: float) -> list:
+    """Runs in a child process: its own DB connection, its own GIL."""
+    db = Db(db_path)
+    return matcher.suggest(db.open_markets(KALSHI), db.open_markets(PMUS), min_score=min_score,
+                           window_days=window_days, skip=db.known_candidate_keys())
 
 
 def _past(iso: str | None) -> bool:
@@ -58,22 +67,23 @@ class Scanner:
             if isinstance(k_res, Exception):
                 errors.append(f"kalshi: {k_res!r}")
             else:
-                self.db.upsert_markets(KALSHI, k_res)
+                await asyncio.to_thread(self.db.upsert_markets, KALSHI, k_res)
                 st["kalshi_markets"] = len(k_res)
             if isinstance(p_res, Exception):
                 errors.append(f"pmus: {p_res!r}")
             else:
-                self.db.upsert_markets(PMUS, p_res)
+                await asyncio.to_thread(self.db.upsert_markets, PMUS, p_res)
                 st["pmus_markets"] = len(p_res)
 
             s = self.db.settings()
-            skip = self.db.known_candidate_keys()
-            suggestions = await asyncio.to_thread(
-                matcher.suggest,
-                self.db.open_markets(KALSHI), self.db.open_markets(PMUS),
-                min_score=float(s["match_min_score"]), window_days=float(s["match_date_window_days"]), skip=skip,
-            )
-            self.db.add_candidates(suggestions)
+            # The matcher is a CPU-bound Python loop; in a thread it starves API requests through the GIL
+            # (Review took 6-8 s during discovery). A separate process keeps the API responsive.
+            loop = asyncio.get_running_loop()
+            with ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context("spawn")) as pool:
+                suggestions = await loop.run_in_executor(
+                    pool, _match_in_process, self.db.path,
+                    float(s["match_min_score"]), float(s["match_date_window_days"]))
+            await asyncio.to_thread(self.db.add_candidates, suggestions)
             st["new_candidates"] = len(suggestions)
             st["error"] = "; ".join(errors) or None
             log.info("discovery: kalshi=%s pmus=%s new_candidates=%s", st["kalshi_markets"], st["pmus_markets"],
