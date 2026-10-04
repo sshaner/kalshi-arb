@@ -39,8 +39,28 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Install MAUI workload
-        run: dotnet workload install maui
+      # The newest iOS workload can require an Xcode the runner doesn't have yet (iOS SDK 27.0 needs Xcode 27).
+      # Use Xcode 27 when the image has it; otherwise pin the workloads to the Xcode 26 line.
+      - name: Select Xcode and install MAUI workload
+        run: |
+          XC27=$(ls -d /Applications/Xcode_27*.app 2>/dev/null | sort -V | tail -1 || true)
+          if [ -n "$XC27" ]; then
+            echo "Using $XC27"
+            sudo xcode-select -s "$XC27"
+            dotnet workload install maui
+          else
+            echo "No Xcode 27 on this image ($(xcodebuild -version | head -1)); pinning iOS workload to 26.x"
+            cat > rollback.json <<'EOF'
+          {
+            "microsoft.net.sdk.ios": "26.5.10301/10.0.100",
+            "microsoft.net.sdk.maccatalyst": "26.5.10301/10.0.100",
+            "microsoft.net.sdk.android": "36.1.69/10.0.100",
+            "microsoft.net.sdk.maui": "10.0.20/10.0.100"
+          }
+          EOF
+            dotnet workload install maui --from-rollback-file rollback.json
+          fi
+          dotnet workload list
 
       - name: Import signing certificate and provisioning profile
         env:
