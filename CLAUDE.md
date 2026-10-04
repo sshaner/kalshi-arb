@@ -48,4 +48,9 @@ Bulk top-of-book for all active pairs each cycle; full order books only for pair
 
 - App API token: `C:\Dev\.claude-long-term-memory\.tokens\kalshi-arb-api` and server `.env`.
 - Kalshi / Polymarket API keys: `.passwords\kalshi`, `.passwords\polymarket` — **unused** in alert/paper mode; only needed for authenticated rate limits or live trading.
-- Apple: shared distribution cert in `C:\Dev\.Apple\`, ASC API key per MusicColab's `CLAUDE.md`, APNs key (once created) in `C:\Dev\.Apple\` and server `.env`. Team ID `V3X94XMM36`, bundle `org.shnr.arbscanner`, profile name `Arb Scanner App Store`.
+- Apple: shared distribution cert in `C:\Dev\.Apple\` (password `.passwordspple` — **not** `apple-ios-distribution-p12`, which doesn't open it), ASC API key per MusicColab's `CLAUDE.md`. APNs auth key `AuthKey_VJMKA689W2.p8` (team-scoped, created 2026-10-03) in `C:\Dev\.Apple\` and on the server as `/projects/kalshi-arb/apns_key.p8`. Team ID `V3X94XMM36`, bundle `org.shnr.arbscanner`, ASC app id `6818922367`, profile name `Arb Scanner App Store`, internal TestFlight group `Internal`.
+- GitHub token `.tokens\github-kalshi-arb` can set Actions secrets and re-run workflows but **cannot push** (403) — pushes go through the normal git credential helper.
+
+## CI gotcha
+
+`dotnet workload install maui` grabs the newest iOS workload, which can require an Xcode the `macos-26` runner doesn't have (iOS SDK 27.0 needs Xcode 27; image had 26.6). The workflow selects Xcode 27 if present, otherwise installs from a rollback file pinned to the iOS 26.5 workload. Update the pins when the runner image gets Xcode 27.
