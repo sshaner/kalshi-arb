@@ -27,6 +27,11 @@ public partial class AppShell : Shell
         if (!_creds.IsConfigured)
             await Navigation.PushModalAsync(App.Services.GetRequiredService<SetupPage>());
         else
+        {
             _push.Request();
+            // Existing installs see the tutorial once after updating to the version that added it.
+            if (!LearningMode.Current.TutorialSeen)
+                await Navigation.PushModalAsync(new TutorialPage());
+        }
     }
 }

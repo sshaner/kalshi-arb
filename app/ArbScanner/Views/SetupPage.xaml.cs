@@ -12,6 +12,8 @@ public partial class SetupPage : ContentPage
         {
             await Navigation.PopModalAsync();
             App.Services.GetRequiredService<DashboardViewModel>().RefreshCommand.Execute(null);
+            if (!Services.LearningMode.Current.TutorialSeen)
+                await Shell.Current.Navigation.PushModalAsync(new TutorialPage());
         };
     }
 

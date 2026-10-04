@@ -7,7 +7,7 @@ from typing import Any
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
-from . import config, paper
+from . import arb_engine, config, matcher, paper
 from .models import KALSHI, PMUS
 
 
@@ -40,22 +40,35 @@ def _market_view(m: dict | None) -> dict | None:
                                   "rules", "yes_ask", "no_ask", "open")}
 
 
+def _top_size(book: dict, side: str) -> float | None:
+    levels = book.get("yes_asks" if side == "yes" else "no_asks") or []
+    return levels[0][1] if levels else None
+
+
 def create_app(db, scanner, pusher) -> FastAPI:
     app = FastAPI(title="kalshi-arb", dependencies=[Depends(_auth)])
 
+    def details(k: dict | None, p: dict | None) -> dict | None:
+        return matcher.match_details(k, p) if k and p else None
+
     def pair_view(p: dict) -> dict:
+        k, pm = db.market(KALSHI, p["kalshi_id"]), db.market(PMUS, p["pmus_id"])
         return {**p, "inverted": bool(p["inverted"]), "paused": bool(p["paused"]),
-                "kalshi": _market_view(db.market(KALSHI, p["kalshi_id"])),
-                "pmus": _market_view(db.market(PMUS, p["pmus_id"]))}
+                "kalshi": _market_view(k), "pmus": _market_view(pm), "match_details": details(k, pm)}
 
     def opp_view(o: dict, books: bool = False) -> dict:
         pair = db.one("SELECT * FROM pairs WHERE id = ?", (o["pair_id"],))
         out = {k: v for k, v in o.items() if k not in ("k_book", "p_book")}
         out["active"] = bool(o["active"])
         out["pair"] = pair_view(pair) if pair else None
+        k_book, p_book = json.loads(o["k_book"] or "{}"), json.loads(o["p_book"] or "{}")
+        # Depth at the best price on each leg's side: how many contracts are really available there.
+        out["k_top_size"] = _top_size(k_book, o["k_side"])
+        out["p_top_size"] = _top_size(p_book, o["p_side"])
+        closes = [m["close_time"] for m in (out["pair"] or {}).values() if isinstance(m, dict) and m.get("close_time")]
+        out["days_to_close"] = arb_engine.days_until(min(closes)) if closes else None
         if books:
-            out["k_book"] = json.loads(o["k_book"] or "{}")
-            out["p_book"] = json.loads(o["p_book"] or "{}")
+            out["k_book"], out["p_book"] = k_book, p_book
         return out
 
     @app.get("/api/status")
@@ -88,8 +101,12 @@ def create_app(db, scanner, pusher) -> FastAPI:
     @app.get("/api/candidates")
     def candidates(status: str = "pending", limit: int = 100) -> list[dict]:
         rows = db.q("SELECT * FROM candidates WHERE status = ? ORDER BY CASE WHEN est_cost >= 0.9 AND est_cost < 1 THEN 0 WHEN est_cost < 0.9 THEN 1 ELSE 2 END, score DESC, est_cost LIMIT ?", (status, limit))
-        return [{**c, "inverted": bool(c["inverted"]), "kalshi": _market_view(db.market(KALSHI, c["kalshi_id"])),
-                 "pmus": _market_view(db.market(PMUS, c["pmus_id"]))} for c in rows]
+        out = []
+        for c in rows:
+            k, pm = db.market(KALSHI, c["kalshi_id"]), db.market(PMUS, c["pmus_id"])
+            out.append({**c, "inverted": bool(c["inverted"]), "kalshi": _market_view(k), "pmus": _market_view(pm),
+                        "match_details": details(k, pm)})
+        return out
 
     @app.post("/api/candidates/{cid}/approve")
     def approve(cid: int, body: ApproveBody) -> dict:

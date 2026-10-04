@@ -71,9 +71,15 @@ public class ApiClient(Credentials creds)
 
     public Task<PaperSummary> PaperSummary() => Send<PaperSummary>(HttpMethod.Get, "/api/paper/summary");
 
-    public Task<ScannerSettings> Settings() => Send<ScannerSettings>(HttpMethod.Get, "/api/settings");
+    ScannerSettings? _settings;
 
-    public Task<ScannerSettings> SaveSettings(ScannerSettings s) => Send<ScannerSettings>(HttpMethod.Put, "/api/settings", s);
+    public async Task<ScannerSettings> Settings() => _settings = await Send<ScannerSettings>(HttpMethod.Get, "/api/settings");
+
+    /// <summary>Last-known settings (fetched once), for explanations that compare against your thresholds.</summary>
+    public async Task<ScannerSettings> SettingsCached() => _settings ?? await Settings();
+
+    public async Task<ScannerSettings> SaveSettings(ScannerSettings s) =>
+        _settings = await Send<ScannerSettings>(HttpMethod.Put, "/api/settings", s);
 
     public Task<JsonElement> RegisterDevice(string token) => Send<JsonElement>(HttpMethod.Post, "/api/devices", new { token });
 

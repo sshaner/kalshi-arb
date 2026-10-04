@@ -2,58 +2,114 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ArbScanner.ViewModels"
+             xmlns:controls="clr-namespace:ArbScanner.Controls"
+             xmlns:services="clr-namespace:ArbScanner.Services"
              x:Class="ArbScanner.Views.SettingsPage"
              x:DataType="vm:SettingsViewModel"
              Title="Settings">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="{Binding ToggleText, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}"
+                     Command="{Binding ToggleCommand, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}" />
+    </ContentPage.ToolbarItems>
     <RefreshView IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
         <ScrollView>
             <VerticalStackLayout Padding="16" Spacing="12">
+                <controls:HelpCard ScreenKey="settings" />
                 <Label Text="{Binding Error}" Style="{StaticResource Error}" />
 
-                <Border Style="{StaticResource Card}">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <VerticalStackLayout>
-                            <Label Text="Scanning" Style="{StaticResource H2}" />
-                            <Label Text="Pause price checks and alerts" Style="{StaticResource Muted}" />
-                        </VerticalStackLayout>
-                        <Switch Grid.Column="1" IsToggled="{Binding ScanEnabled}" VerticalOptions="Center" />
-                    </Grid>
+                <!-- Learning: always visible, so help can be turned back on -->
+                <Border Style="{StaticResource Card}" Stroke="{StaticResource Accent}">
+                    <VerticalStackLayout Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <VerticalStackLayout>
+                                <Label Text="Learning mode" Style="{StaticResource H2}" />
+                                <Label Text="Intro cards, ⓘ explanations and step-by-step walkthroughs on every screen. Also toggled by the Help button at the top of each tab."
+                                       Style="{StaticResource Muted}" />
+                            </VerticalStackLayout>
+                            <Switch Grid.Column="1" VerticalOptions="Center"
+                                    IsToggled="{Binding IsOn, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
+                            <Button Text="Tutorial" Padding="4,8" Command="{Binding ReplayTutorialCommand}" />
+                            <Button Grid.Column="1" Text="Glossary" Padding="4,8" Command="{Binding OpenGlossaryCommand}" />
+                            <Button Grid.Column="2" Text="Reset tips" Padding="4,8" Command="{Binding ResetIntrosCommand}" />
+                        </Grid>
+                    </VerticalStackLayout>
                 </Border>
 
                 <Border Style="{StaticResource Card}">
-                    <Grid ColumnDefinitions="*,110" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="10">
-                        <Label Grid.ColumnSpan="2" Text="Opportunity thresholds" Style="{StaticResource H2}" />
-                        <Label Grid.Row="1" Text="Min edge (¢ per contract, after fees)" VerticalOptions="Center" />
-                        <Entry Grid.Row="1" Grid.Column="1" Text="{Binding MinEdgeCents}" Keyboard="Numeric" />
-                        <Label Grid.Row="2" Text="Min profit ($ for full size)" VerticalOptions="Center" />
-                        <Entry Grid.Row="2" Grid.Column="1" Text="{Binding MinProfitDollars}" Keyboard="Numeric" />
-                        <Label Grid.Row="3" Text="Min annualized return (%, 0 = off)" VerticalOptions="Center" />
-                        <Entry Grid.Row="3" Grid.Column="1" Text="{Binding MinAnnualizedPct}" Keyboard="Numeric" />
-                        <Label Grid.Row="4" Text="Paper stake cap ($ per opportunity)" VerticalOptions="Center" />
-                        <Entry Grid.Row="4" Grid.Column="1" Text="{Binding PaperMaxStake}" Keyboard="Numeric" />
-                    </Grid>
+                    <VerticalStackLayout Spacing="6">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <VerticalStackLayout>
+                                <Label Text="Scanning" Style="{StaticResource H2}" />
+                                <Label Text="Pause price checks and alerts" Style="{StaticResource Muted}" />
+                            </VerticalStackLayout>
+                            <Switch Grid.Column="1" IsToggled="{Binding ScanEnabled}" VerticalOptions="Center" />
+                        </Grid>
+                        <controls:SettingHelpView Key="scan_enabled" />
+                    </VerticalStackLayout>
                 </Border>
 
                 <Border Style="{StaticResource Card}">
-                    <Grid ColumnDefinitions="*,110" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="10">
-                        <Label Grid.ColumnSpan="2" Text="Alerts" Style="{StaticResource H2}" />
-                        <Label Grid.Row="1" Text="Cooldown per pair (minutes)" VerticalOptions="Center" />
-                        <Entry Grid.Row="1" Grid.Column="1" Text="{Binding AlertCooldownMin}" Keyboard="Numeric" />
-                        <Label Grid.Row="2" Text="Quiet hours start (0–23, blank = off)" VerticalOptions="Center" />
-                        <Entry Grid.Row="2" Grid.Column="1" Text="{Binding QuietStart}" Keyboard="Numeric" />
-                        <Label Grid.Row="3" Text="Quiet hours end (0–23)" VerticalOptions="Center" />
-                        <Entry Grid.Row="3" Grid.Column="1" Text="{Binding QuietEnd}" Keyboard="Numeric" />
-                    </Grid>
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Opportunity thresholds" Style="{StaticResource H2}" />
+                        <Grid ColumnDefinitions="*,110" ColumnSpacing="10">
+                            <Label Text="Min edge (¢ per contract, after fees)" VerticalOptions="Center" />
+                            <Entry Grid.Column="1" Text="{Binding MinEdgeCents}" Keyboard="Numeric" />
+                        </Grid>
+                        <controls:SettingHelpView Key="min_edge_cents" />
+                        <Grid ColumnDefinitions="*,110" ColumnSpacing="10">
+                            <Label Text="Min profit ($ for full size)" VerticalOptions="Center" />
+                            <Entry Grid.Column="1" Text="{Binding MinProfitDollars}" Keyboard="Numeric" />
+                        </Grid>
+                        <controls:SettingHelpView Key="min_profit_dollars" />
+                        <Grid ColumnDefinitions="*,110" ColumnSpacing="10">
+                            <Label Text="Min annualized return (%, 0 = off)" VerticalOptions="Center" />
+                            <Entry Grid.Column="1" Text="{Binding MinAnnualizedPct}" Keyboard="Numeric" />
+                        </Grid>
+                        <controls:SettingHelpView Key="min_annualized" />
+                        <Grid ColumnDefinitions="*,110" ColumnSpacing="10">
+                            <Label Text="Paper stake cap ($ per opportunity)" VerticalOptions="Center" />
+                            <Entry Grid.Column="1" Text="{Binding PaperMaxStake}" Keyboard="Numeric" />
+                        </Grid>
+                        <controls:SettingHelpView Key="paper_max_stake" />
+                    </VerticalStackLayout>
                 </Border>
 
                 <Border Style="{StaticResource Card}">
-                    <Grid ColumnDefinitions="*,110" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="10">
-                        <Label Grid.ColumnSpan="2" Text="Matching" Style="{StaticResource H2}" />
-                        <Label Grid.Row="1" Text="Min match score (0–100)" VerticalOptions="Center" />
-                        <Entry Grid.Row="1" Grid.Column="1" Text="{Binding MatchMinScore}" Keyboard="Numeric" />
-                        <Label Grid.Row="2" Text="Date window (days)" VerticalOptions="Center" />
-                        <Entry Grid.Row="2" Grid.Column="1" Text="{Binding MatchWindowDays}" Keyboard="Numeric" />
-                    </Grid>
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Alerts" Style="{StaticResource H2}" />
+                        <Grid ColumnDefinitions="*,110" ColumnSpacing="10">
+                            <Label Text="Cooldown per pair (minutes)" VerticalOptions="Center" />
+                            <Entry Grid.Column="1" Text="{Binding AlertCooldownMin}" Keyboard="Numeric" />
+                        </Grid>
+                        <controls:SettingHelpView Key="alert_cooldown_min" />
+                        <Grid ColumnDefinitions="*,110" ColumnSpacing="10">
+                            <Label Text="Quiet hours start (0–23, blank = off)" VerticalOptions="Center" />
+                            <Entry Grid.Column="1" Text="{Binding QuietStart}" Keyboard="Numeric" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,110" ColumnSpacing="10">
+                            <Label Text="Quiet hours end (0–23)" VerticalOptions="Center" />
+                            <Entry Grid.Column="1" Text="{Binding QuietEnd}" Keyboard="Numeric" />
+                        </Grid>
+                        <controls:SettingHelpView Key="quiet_hours" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Matching" Style="{StaticResource H2}" />
+                        <Grid ColumnDefinitions="*,110" ColumnSpacing="10">
+                            <Label Text="Min match score (0–100)" VerticalOptions="Center" />
+                            <Entry Grid.Column="1" Text="{Binding MatchMinScore}" Keyboard="Numeric" />
+                        </Grid>
+                        <controls:SettingHelpView Key="match_min_score" />
+                        <Grid ColumnDefinitions="*,110" ColumnSpacing="10">
+                            <Label Text="Date window (days)" VerticalOptions="Center" />
+                            <Entry Grid.Column="1" Text="{Binding MatchWindowDays}" Keyboard="Numeric" />
+                        </Grid>
+                        <controls:SettingHelpView Key="match_date_window_days" />
+                    </VerticalStackLayout>
                 </Border>
 
                 <Button Text="Save settings" Style="{StaticResource Primary}" Command="{Binding SaveCommand}" />

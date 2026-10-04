@@ -282,3 +282,35 @@ def suggest(
             if taken >= per_market:
                 break
     return out
+
+
+def match_details(k: dict, p: dict) -> dict:
+    """The facts behind a suggested pair, for the app's plain-English explanation."""
+    title_o = _title_orientation(k, p)
+    flipped = bool(p.get("flipped"))
+    if title_o is None:
+        how = "mismatch"
+    elif not title_o and not flipped:
+        how = "same"
+    elif title_o and not flipped:
+        how = "inverse_head_to_head"
+    elif flipped and not title_o:
+        how = "inverse_flipped_spread"
+    else:
+        how = "same"  # flipped market whose NO-side team is the Kalshi outcome: two inversions cancel
+    da, db = _dates(k), _dates(p)
+    gap = round(min(abs((x - y).total_seconds()) for x in da for y in db) / 86400, 1) if da and db else None
+    return {
+        "numbers": sorted(numbers(k.get("title", "")) & numbers(p.get("title", ""))),
+        "qualifiers": sorted(qualifiers(f"{k.get('event_title', '')} {k.get('title', '')}")),
+        "prop_kind": list(prop_kind(k.get("title", ""))),
+        "kalshi_entity": entity(k.get("title", "")),
+        "pmus_entity": entity(p.get("title", "")),
+        "pmus_no_side": p.get("alt_title") or "",
+        "head_to_head": bool(p.get("alt_title")),
+        "flipped": flipped,
+        "date_gap_days": gap,
+        "orientation": how,
+        "event_similarity": round(fuzz.token_set_ratio(normalize(k.get("event_title", "")),
+                                                       normalize(p.get("event_title", ""))), 1),
+    }

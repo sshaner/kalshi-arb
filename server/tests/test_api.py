@@ -74,3 +74,9 @@ def test_bulk_approve(client):
     pair = db.one("SELECT * FROM pairs WHERE kalshi_id = 'K2'")
     assert pair["inverted"] == 1
     assert db.one("SELECT status FROM candidates WHERE kalshi_id = 'K3'")["status"] == "pending"
+
+
+def test_candidates_include_match_details(client):
+    c, _ = client
+    cand = c.get("/api/candidates", headers=AUTH).json()[0]
+    assert "orientation" in cand["match_details"]

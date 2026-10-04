@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using ArbScanner.Learning;
 using ArbScanner.Models;
 using ArbScanner.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -85,6 +86,14 @@ public partial class DashboardViewModel(ApiClient api) : BaseViewModel
         new[] { Status.Discovery.Error, Status.Prices.Error, Status.Settlement.Error, Status.Push.LastError }
             .Where(e => !string.IsNullOrEmpty(e)));
 
+    public string LiveHint => Status is null ? "" : Status.Counts.LiveOpportunities > 0
+        ? "Arbs available now. Open the Opps tab for the walkthrough."
+        : Status.Counts.ActivePairs == 0 ? "None yet: nothing is being watched until you approve pairs in Review."
+        : "None right now. Normal; you'll get a push when one appears.";
+    public string EdgeHint => "Profit per contract after fees. Under 2¢ is fragile.";
+    public string ReviewHint => Status is { Counts.PendingCandidates: > 0 } ? "Start here: approve real matches, reject the rest." : "All caught up.";
+    public string PairsHint => "Pairs the scanner checks every ~30 s.";
+
     partial void OnStatusChanged(ServerStatus? value) => OnPropertyChanged(string.Empty);
 
     [RelayCommand]
@@ -122,8 +131,13 @@ public partial class OpportunitiesViewModel(ApiClient api) : BaseViewModel
     Task Refresh() => Run(async () =>
     {
         var list = await api.Opportunities(ShowActive);
+        var s = await api.SettingsCached();
         Items.Clear();
-        foreach (var o in list) Items.Add(o);
+        foreach (var o in list)
+        {
+            o.Explanation = Explainer.ExplainOpportunity(o, s);
+            Items.Add(o);
+        }
         IsEmpty = Items.Count == 0;
     });
 
@@ -151,7 +165,9 @@ public partial class OpportunityDetailViewModel(ApiClient api) : BaseViewModel, 
     [RelayCommand]
     Task Refresh() => Run(async () =>
     {
-        Item = await api.Opportunity(_id);
+        var o = await api.Opportunity(_id);
+        o.Explanation = Explainer.ExplainOpportunity(o, await api.SettingsCached());
+        Item = o;
         Fill(KalshiBook, Item.KBook, Item.KSide);
         Fill(PmusBook, Item.PBook, Item.PSide);
     });
@@ -186,8 +202,13 @@ public partial class ReviewViewModel(ApiClient api) : BaseViewModel
     Task Refresh() => Run(async () =>
     {
         var list = await api.Candidates();
+        var s = await api.SettingsCached();
         Items.Clear();
-        foreach (var c in list) Items.Add(c);
+        foreach (var c in list)
+        {
+            c.Explanation = Explainer.ExplainCandidate(c, s);
+            Items.Add(c);
+        }
         IsEmpty = Items.Count == 0;
     });
 
@@ -215,6 +236,14 @@ public partial class ReviewViewModel(ApiClient api) : BaseViewModel
     [RelayCommand]
     Task Rules(Candidate c) => Alert("Resolution rules",
         $"KALSHI\n{c.Kalshi?.Rules}\n\nPOLYMARKET US\n{c.Pmus?.Rules}");
+
+    [RelayCommand]
+    async Task Explain(Candidate c)
+    {
+        if (c.Explanation is null) return;
+        await Shell.Current.Navigation.PushModalAsync(new Views.ExplanationPage(c.Explanation, "Resolution rules, side by side",
+            $"KALSHI\n{c.Kalshi?.Rules}\n\nPOLYMARKET US\n{c.Pmus?.Rules}"));
+    }
 
     [RelayCommand]
     Task Discover() => Run(async () =>
@@ -294,12 +323,23 @@ public partial class PaperViewModel(ApiClient api) : BaseViewModel
     partial void OnShowOpenChanged(bool value) => RefreshCommand.Execute(null);
 
     [RelayCommand]
+    async Task Explain(PaperPosition p)
+    {
+        if (p.Explanation is not null)
+            await Shell.Current.Navigation.PushModalAsync(new Views.ExplanationPage(p.Explanation));
+    }
+
+    [RelayCommand]
     Task Refresh() => Run(async () =>
     {
         Summary = await api.PaperSummary();
         var list = await api.Positions(ShowOpen ? "open" : "settled");
         Items.Clear();
-        foreach (var p in list) Items.Add(p);
+        foreach (var p in list)
+        {
+            p.Explanation = Explainer.ExplainPosition(p);
+            Items.Add(p);
+        }
         IsEmpty = Items.Count == 0;
     });
 }
@@ -379,6 +419,19 @@ public partial class SettingsViewModel(ApiClient api, Credentials creds, PushReg
             ? $"Sent to {r.Sent} device(s).{(r.LastError is null ? "" : "\n" + r.LastError)}"
             : "APNs isn't configured on the server yet.");
     });
+
+    [RelayCommand]
+    Task ReplayTutorial() => Shell.Current.Navigation.PushModalAsync(new Views.TutorialPage());
+
+    [RelayCommand]
+    Task OpenGlossary() => Shell.Current.Navigation.PushModalAsync(new Views.GlossaryPage());
+
+    [RelayCommand]
+    Task ResetIntros()
+    {
+        Services.LearningMode.Current.ResetIntros();
+        return Alert("Intro cards restored", "Each screen's intro card will show again while Learning mode is on.");
+    }
 
     [RelayCommand]
     async Task SignOut()

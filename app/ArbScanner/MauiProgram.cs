@@ -11,6 +11,7 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder.UseMauiApp<App>();
 
+        builder.Services.AddSingleton(LearningMode.Current);
         builder.Services.AddSingleton<Credentials>();
         builder.Services.AddSingleton<ApiClient>();
         builder.Services.AddSingleton<PushRegistration>();

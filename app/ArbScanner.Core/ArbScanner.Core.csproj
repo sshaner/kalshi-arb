@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Platform-free logic shared by the app and its unit tests: API models plus all teaching content
+       (glossary, tutorial, screen intros, setting help) and the Explainer that turns data into plain English. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ArbScanner</RootNamespace>
+  </PropertyGroup>
+
+</Project>

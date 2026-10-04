@@ -2,13 +2,20 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ArbScanner.ViewModels"
-             xmlns:m="clr-namespace:ArbScanner.Models"
+             xmlns:controls="clr-namespace:ArbScanner.Controls"
+             xmlns:services="clr-namespace:ArbScanner.Services"
+             xmlns:m="clr-namespace:ArbScanner.Models;assembly=ArbScanner.Core"
              x:Class="ArbScanner.Views.PairsPage"
              x:DataType="vm:PairsViewModel"
              Title="Active pairs">
-    <Grid RowDefinitions="Auto,*" Padding="16,8,16,0" RowSpacing="8">
-        <Label Text="{Binding Error}" Style="{StaticResource Error}" />
-        <RefreshView Grid.Row="1" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="{Binding ToggleText, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}"
+                     Command="{Binding ToggleCommand, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}" />
+    </ContentPage.ToolbarItems>
+    <Grid RowDefinitions="Auto,Auto,*" Padding="16,8,16,0" RowSpacing="8">
+        <controls:HelpCard ScreenKey="pairs" />
+        <Label Grid.Row="1" Text="{Binding Error}" Style="{StaticResource Error}" />
+        <RefreshView Grid.Row="2" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
             <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
                 <CollectionView.EmptyView>
                     <Label Text="No approved pairs yet." Style="{StaticResource Muted}" HorizontalTextAlignment="Center" Margin="24" />

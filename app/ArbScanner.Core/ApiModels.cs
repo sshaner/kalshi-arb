@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using ArbScanner.Learning;
 
 namespace ArbScanner.Models;
 
@@ -16,12 +17,31 @@ public class MarketView
     public string? Rules { get; set; }
     public double? YesAsk { get; set; }
     public double? NoAsk { get; set; }
+    public string? AltTitle { get; set; }
+    public bool Flipped { get; set; }
 
     public string Display => string.IsNullOrWhiteSpace(EventTitle) ? Title : $"{EventTitle} — {Title}";
     public string Quote => $"Y {Cents(YesAsk)}  ·  N {Cents(NoAsk)}";
     public string CloseDisplay => Fmt.Date(CloseTime);
 
     static string Cents(double? v) => v is null ? "–" : $"{v * 100:0.#}¢";
+}
+
+/// <summary>Why the server paired two markets (server/arb/matcher.py match_details).</summary>
+public class MatchDetails
+{
+    public List<string> Numbers { get; set; } = new();
+    public List<string> Qualifiers { get; set; } = new();
+    public List<string> PropKind { get; set; } = new();
+    public string KalshiEntity { get; set; } = "";
+    public string PmusEntity { get; set; } = "";
+    public string PmusNoSide { get; set; } = "";
+    public bool HeadToHead { get; set; }
+    public bool Flipped { get; set; }
+    public double? DateGapDays { get; set; }
+    /// <summary>same | inverse_head_to_head | inverse_flipped_spread | mismatch</summary>
+    public string Orientation { get; set; } = "same";
+    public double EventSimilarity { get; set; }
 }
 
 public class Pair
@@ -37,6 +57,7 @@ public class Pair
     public string? LastError { get; set; }
     public MarketView? Kalshi { get; set; }
     public MarketView? Pmus { get; set; }
+    public MatchDetails? MatchDetails { get; set; }
 
     public string Title => Kalshi?.Display ?? KalshiId;
     public string Subtitle => (Inverted ? "Inverted · " : "") + (Paused ? "Paused · " : "") + $"checked {Fmt.Ago(LastChecked)}";
@@ -49,8 +70,13 @@ public class Candidate
     public string PmusId { get; set; } = "";
     public double Score { get; set; }
     public double? EstCost { get; set; }
+    public bool Inverted { get; set; }
     public MarketView? Kalshi { get; set; }
     public MarketView? Pmus { get; set; }
+    public MatchDetails? MatchDetails { get; set; }
+
+    [JsonIgnore] public Explanation? Explanation { get; set; }
+    [JsonIgnore] public string Suggestion => Inverted ? "Suggested: Inverse" : "Suggested: Same";
 
     public string ScoreDisplay => $"match {Score:0}";
     public string GapDisplay => EstCost is null ? "no quote" :
@@ -84,6 +110,11 @@ public class Opportunity
     public Pair? Pair { get; set; }
     public BookView? KBook { get; set; }
     public BookView? PBook { get; set; }
+    public double? KTopSize { get; set; }
+    public double? PTopSize { get; set; }
+    public double? DaysToClose { get; set; }
+
+    [JsonIgnore] public Explanation? Explanation { get; set; }
 
     public string Title => Pair?.Title ?? $"Pair {PairId}";
     public string Legs => $"Kalshi {KSide.ToUpper()} {KAvg * 100:0.#}¢ + PM US {PSide.ToUpper()} {PAvg * 100:0.#}¢";
@@ -108,14 +139,21 @@ public class PaperPosition
     public long PairId { get; set; }
     public double Contracts { get; set; }
     public string KSide { get; set; } = "";
+    public double KAvg { get; set; }
     public double KCost { get; set; }
     public double KFee { get; set; }
     public string PSide { get; set; } = "";
+    public double PAvg { get; set; }
     public double PCost { get; set; }
     public double PFee { get; set; }
     public double OpenedAt { get; set; }
     public string Status { get; set; } = "";
+    public double? KResult { get; set; }
+    public double? PResult { get; set; }
+    public double? Payout { get; set; }
     public double? Pnl { get; set; }
+
+    [JsonIgnore] public Explanation? Explanation { get; set; }
     public bool Divergent { get; set; }
     public Pair? Pair { get; set; }
 

@@ -157,11 +157,12 @@ class Scanner:
                              (pair["id"],))
         if (recent and recent["t"] and time.time() - recent["t"] < cooldown) or _in_quiet_hours(s):
             return
-        title = f"{k_m.get('event_title', '')} — {k_m.get('title', '')}".strip(" —")[:120]
-        ann = f", {opp.annualized * 100:.0f}%/yr" if opp.annualized else ""
-        body = (f"Kalshi {opp.kalshi.side.upper()} {opp.kalshi.avg_price * 100:.1f}¢ + "
-                f"PM US {opp.pmus.side.upper()} {opp.pmus.avg_price * 100:.1f}¢ → "
-                f"{opp.edge_cents:.1f}¢/ct, ${opp.profit:.2f} on {opp.contracts:.0f}{ann}")
+        title = f"Possible arb: {k_m.get('event_title', '')} — {k_m.get('title', '')}".strip(" —")[:120]
+        per_pair = (opp.cost + opp.fees) / opp.contracts * 100
+        ann = f", ~{opp.annualized * 100:.0f}%/yr" if opp.annualized else ""
+        body = (f"Buy {opp.kalshi.side.upper()} on Kalshi + {opp.pmus.side.upper()} on Polymarket US for "
+                f"{per_pair:.1f}¢ per pair incl. fees → ${opp.profit:.2f} profit on {opp.contracts:.0f} contracts{ann}. "
+                f"Tap for the walkthrough.")
         self.db.x("UPDATE opportunities SET alerted = 1 WHERE id = ?", (opp_id,))
         await self.pusher.send(title, body, {"opp_id": opp_id})
 

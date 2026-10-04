@@ -2,12 +2,19 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ArbScanner.ViewModels"
+             xmlns:controls="clr-namespace:ArbScanner.Controls"
+             xmlns:services="clr-namespace:ArbScanner.Services"
              x:Class="ArbScanner.Views.OpportunityPage"
              x:DataType="vm:OpportunityDetailViewModel"
              Title="Opportunity">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="{Binding ToggleText, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}"
+                     Command="{Binding ToggleCommand, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}" />
+    </ContentPage.ToolbarItems>
     <RefreshView IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
         <ScrollView>
             <VerticalStackLayout Padding="16" Spacing="12">
+                <controls:HelpCard ScreenKey="opportunity" />
                 <Label Text="{Binding Error}" Style="{StaticResource Error}" />
                 <Label Text="{Binding Item.Title}" Style="{StaticResource H2}" />
                 <HorizontalStackLayout Spacing="12">
@@ -16,6 +23,7 @@
                 </HorizontalStackLayout>
                 <Label Text="{Binding Item.Totals}" />
                 <Label Text="{Binding Item.SeenDisplay}" Style="{StaticResource Muted}" />
+                <controls:ExplanationView Explanation="{Binding Item.Explanation}" />
 
                 <Border Style="{StaticResource Card}">
                     <VerticalStackLayout Spacing="6">

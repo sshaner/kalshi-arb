@@ -49,7 +49,7 @@ public class AppDelegate : MauiUIApplicationDelegate, IUNUserNotificationCenterD
     {
         var data = new Dictionary<string, string>();
         foreach (var (key, value) in response.Notification.Request.Content.UserInfo)
-            data[key.ToString()] = value?.ToString() ?? "";
+            data[key.ToString() ?? ""] = value?.ToString() ?? "";
         PushRegistration.OnNotificationTapped(data);
         completionHandler();
     }

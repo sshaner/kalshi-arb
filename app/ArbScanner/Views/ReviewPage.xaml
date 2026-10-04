@@ -2,17 +2,22 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ArbScanner.ViewModels"
-             xmlns:m="clr-namespace:ArbScanner.Models"
+             xmlns:controls="clr-namespace:ArbScanner.Controls"
+             xmlns:services="clr-namespace:ArbScanner.Services"
+             xmlns:m="clr-namespace:ArbScanner.Models;assembly=ArbScanner.Core"
              x:Class="ArbScanner.Views.ReviewPage"
              x:DataType="vm:ReviewViewModel"
              Title="Review pairs">
     <ContentPage.ToolbarItems>
+        <ToolbarItem Text="{Binding ToggleText, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}"
+                     Command="{Binding ToggleCommand, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}" />
         <ToolbarItem Text="Pairs" Command="{Binding PairsCommand}" />
         <ToolbarItem Text="Rescan" Command="{Binding DiscoverCommand}" />
     </ContentPage.ToolbarItems>
-    <Grid RowDefinitions="Auto,*" Padding="16,8,16,0" RowSpacing="8">
-        <Label Text="{Binding Error}" Style="{StaticResource Error}" />
-        <RefreshView Grid.Row="1" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
+    <Grid RowDefinitions="Auto,Auto,*" Padding="16,8,16,0" RowSpacing="8">
+        <controls:HelpCard ScreenKey="review" />
+        <Label Grid.Row="1" Text="{Binding Error}" Style="{StaticResource Error}" />
+        <RefreshView Grid.Row="2" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
             <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
                 <CollectionView.EmptyView>
                     <Label Text="Nothing to review. Tap Rescan to look for new matches."
@@ -25,10 +30,15 @@
                     <DataTemplate x:DataType="m:Candidate">
                         <Border Style="{StaticResource Card}">
                             <VerticalStackLayout Spacing="8">
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <Label Text="{Binding GapDisplay}" Style="{StaticResource Muted}" />
-                                    <Label Grid.Column="1" Text="{Binding ScoreDisplay}" Style="{StaticResource Muted}" />
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <Label Text="{Binding GapDisplay}" Style="{StaticResource Muted}" VerticalOptions="Center" />
+                                    <Label Grid.Column="1" Text="{Binding ScoreDisplay}" Style="{StaticResource Muted}" VerticalOptions="Center" />
+                                    <controls:InfoButton Grid.Column="2" Term="match-score" />
                                 </Grid>
+                                <VerticalStackLayout Spacing="2" IsVisible="{Binding IsOn, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}">
+                                    <Label Text="{Binding Suggestion}" TextColor="{StaticResource Accent}" FontAttributes="Bold" />
+                                    <Label Text="{Binding Explanation.Summary}" Style="{StaticResource Muted}" />
+                                </VerticalStackLayout>
                                 <VerticalStackLayout Spacing="2">
                                     <Label Text="KALSHI" FontSize="11" TextColor="{StaticResource Kalshi}" FontAttributes="Bold" />
                                     <Label Text="{Binding Kalshi.Display}" />
@@ -41,6 +51,9 @@
                                     <Label Text="{Binding Pmus.Quote}" Style="{StaticResource Muted}" />
                                     <Label Text="{Binding Pmus.CloseDisplay, StringFormat='closes {0}'}" Style="{StaticResource Muted}" />
                                 </VerticalStackLayout>
+                                <Button Text="Explain this pair" IsVisible="{Binding IsOn, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}"
+                                        Command="{Binding ExplainCommand, Source={RelativeSource AncestorType={x:Type vm:ReviewViewModel}}, x:DataType=vm:ReviewViewModel}"
+                                        CommandParameter="{Binding .}" />
                                 <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
                                     <Button Text="Same" Style="{StaticResource Primary}" Padding="4,8"
                                             Command="{Binding ApproveCommand, Source={RelativeSource AncestorType={x:Type vm:ReviewViewModel}}, x:DataType=vm:ReviewViewModel}"

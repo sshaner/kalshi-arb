@@ -241,3 +241,16 @@ def test_fighter_specific_vs_generic_rejected():
 def test_draw_named_none_rejected():
     assert not matcher.entities_agree(matcher.entity("Iceland"), matcher.entity("None"))
     assert not matcher.entities_agree(matcher.entity("Florida"), matcher.entity("South Florida"))
+
+
+def test_match_details_orientations():
+    base = {"event_title": "Washington vs USC", "event_time": "2026-10-04T00:00:00Z", "close_time": "2026-10-05T00:00:00Z"}
+    k = {**base, "title": "USC wins by over 5.5 points"}
+    flipped = {**base, "event_title": "Washington vs. USC", "title": "USC wins by over 5.5 points", "flipped": True}
+    d = matcher.match_details(k, flipped)
+    assert d["orientation"] == "inverse_flipped_spread" and d["numbers"] == ["5.5"] and d["prop_kind"] == ["spread"]
+    assert d["date_gap_days"] == 0.0
+    h2h = {**base, "event_title": "USC vs. Penn State", "title": "USC", "alt_title": "Penn State"}
+    kp = {**base, "event_title": "USC vs Penn State", "title": "Penn State"}
+    assert matcher.match_details(kp, h2h)["orientation"] == "inverse_head_to_head"
+    assert matcher.match_details({**kp, "title": "USC"}, h2h)["orientation"] == "same"

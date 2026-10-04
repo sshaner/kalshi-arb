@@ -11,6 +11,8 @@ An arb exists when the same binary outcome is priced on both venues and `YES ask
 | `server/arb/` | Python 3.12 asyncio service: discovery, price, and settlement loops + FastAPI for the app, one process |
 | `server/tests/` | pytest (fees, engine, matcher, venue parsing from fixtures, API) |
 | `app/ArbScanner/` | .NET 10 MAUI app (XAML + CommunityToolkit.Mvvm). iOS ships; the Android TFM exists **only** so shared code compiles on Windows |
+| `app/ArbScanner.Core/` | net10.0 library: API models + **all teaching content** (`Learning/Glossary.cs`, `HelpText.cs` tutorial/screen intros/setting help, `Explainer.cs` plain-English walkthroughs built from real numbers) |
+| `app/ArbScanner.Core.Tests/` | xUnit; runs in the iOS workflow before the build (never locally) |
 | `.github/workflows/ios-release.yml` | macOS runner → signed IPA → TestFlight (adapted from MusicColab's) |
 | `deploy/` | systemd unit, nginx vhost, `root_setup.sh` (one-time, sudo), `deploy.sh` |
 | `tools/` | one-shot `apple_setup.py` (App Store Connect API) and `github_setup.py` (repo + Actions secrets); own `.venv` |
@@ -54,3 +56,7 @@ Bulk top-of-book for all active pairs each cycle; full order books only for pair
 ## CI gotcha
 
 `dotnet workload install maui` grabs the newest iOS workload, which can require an Xcode the `macos-26` runner doesn't have (iOS SDK 27.0 needs Xcode 27; image had 26.6). The workflow selects Xcode 27 if present, otherwise installs from a rollback file pinned to the iOS 26.5 workload. Update the pins when the runner image gets Xcode 27.
+
+## Learning mode (in-app teaching)
+
+One phone-side switch (`Services/LearningMode.Current`, persisted in `Preferences`, toggled by the "Help" toolbar item on every tab or in Settings) shows/hides every teaching element: per-screen `HelpCard` intros (dismissible, "Reset tips" restores), `InfoButton` ⓘ → glossary entry, `HintLabel`s, `SettingHelpView`s, inline `ExplanationView`s, and Review's "Explain this pair". The 7-card `TutorialPage` shows once (`TutorialSeen`) and is replayable from Settings. All text lives in `ArbScanner.Core/Learning` — edit content there, and keep `Explainer` fee constants in sync with `server/arb/fees.py`. The server supplies `match_details` (why a pair was matched/oriented) and opportunity `k_top_size`/`p_top_size`/`days_to_close` for the explanations.

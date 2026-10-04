@@ -2,19 +2,27 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ArbScanner.ViewModels"
+             xmlns:controls="clr-namespace:ArbScanner.Controls"
+             xmlns:services="clr-namespace:ArbScanner.Services"
              x:Class="ArbScanner.Views.DashboardPage"
              x:DataType="vm:DashboardViewModel"
              Title="Dashboard">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="{Binding ToggleText, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}"
+                     Command="{Binding ToggleCommand, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}" />
+    </ContentPage.ToolbarItems>
     <RefreshView IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
         <ScrollView>
             <VerticalStackLayout Padding="16" Spacing="12">
+                <controls:HelpCard ScreenKey="dashboard" />
                 <Label Text="{Binding Error}" Style="{StaticResource Error}" />
 
                 <Border Style="{StaticResource Card}">
-                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
                         <Label Text="{Binding ScannerState}" Style="{StaticResource H1}" />
                         <Label Grid.Row="1" Text="{Binding PricesLine}" Style="{StaticResource Muted}" />
-                        <Button Grid.Column="1" Grid.RowSpan="2" Text="Pause / Resume" VerticalOptions="Center"
+                        <controls:HintLabel Grid.Row="2" Text="Scanning = approved pairs are being price-checked. Pause stops alerts but keeps finding new suggestions." />
+                        <Button Grid.Column="1" Grid.RowSpan="3" Text="Pause / Resume" VerticalOptions="Center"
                                 Command="{Binding ToggleScanningCommand}" />
                     </Grid>
                 </Border>
@@ -22,37 +30,57 @@
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">
                     <Border Style="{StaticResource Card}">
                         <VerticalStackLayout>
-                            <Label Text="Live opps" Style="{StaticResource Muted}" />
+                            <HorizontalStackLayout>
+                                <Label Text="Live opps" Style="{StaticResource Muted}" VerticalOptions="Center" />
+                                <controls:InfoButton Term="arbitrage" />
+                            </HorizontalStackLayout>
                             <Label Text="{Binding LiveOpps}" Style="{StaticResource H1}" TextColor="{StaticResource Accent}" />
+                            <controls:HintLabel Text="{Binding LiveHint}" />
                         </VerticalStackLayout>
                     </Border>
                     <Border Grid.Column="1" Style="{StaticResource Card}">
                         <VerticalStackLayout>
-                            <Label Text="Best edge" Style="{StaticResource Muted}" />
+                            <HorizontalStackLayout>
+                                <Label Text="Best edge" Style="{StaticResource Muted}" VerticalOptions="Center" />
+                                <controls:InfoButton Term="edge" />
+                            </HorizontalStackLayout>
                             <Label Text="{Binding BestEdge}" Style="{StaticResource H1}" />
+                            <controls:HintLabel Text="{Binding EdgeHint}" />
                         </VerticalStackLayout>
                     </Border>
                     <Border Grid.Row="1" Style="{StaticResource Card}">
                         <VerticalStackLayout>
-                            <Label Text="To review" Style="{StaticResource Muted}" />
+                            <HorizontalStackLayout>
+                                <Label Text="To review" Style="{StaticResource Muted}" VerticalOptions="Center" />
+                                <controls:InfoButton Term="match-score" />
+                            </HorizontalStackLayout>
                             <Label Text="{Binding Pending}" Style="{StaticResource H1}" />
+                            <controls:HintLabel Text="{Binding ReviewHint}" />
                         </VerticalStackLayout>
                     </Border>
                     <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}">
                         <VerticalStackLayout>
-                            <Label Text="Active pairs" Style="{StaticResource Muted}" />
+                            <HorizontalStackLayout>
+                                <Label Text="Active pairs" Style="{StaticResource Muted}" VerticalOptions="Center" />
+                                <controls:InfoButton Term="same-inverse" />
+                            </HorizontalStackLayout>
                             <Label Text="{Binding Pairs}" Style="{StaticResource H1}" />
+                            <controls:HintLabel Text="{Binding PairsHint}" />
                         </VerticalStackLayout>
                     </Border>
                 </Grid>
 
                 <Border Style="{StaticResource Card}">
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Paper trading" Style="{StaticResource H2}" />
+                        <HorizontalStackLayout>
+                            <Label Text="Paper trading" Style="{StaticResource H2}" VerticalOptions="Center" />
+                            <controls:InfoButton Term="paper" />
+                        </HorizontalStackLayout>
                         <Label Text="{Binding PaperRealized}" />
                         <Label Text="{Binding PaperOpen}" Style="{StaticResource Muted}" />
                         <Label Text="{Binding PaperExpected}" Style="{StaticResource Muted}" />
                         <Label Text="{Binding Divergent}" TextColor="{StaticResource Warn}" />
+                        <controls:HintLabel Text="Realized = settled results. Expected = what open positions should pay if both exchanges settle consistently." />
                     </VerticalStackLayout>
                 </Border>
 
@@ -62,6 +90,7 @@
                         <Label Text="{Binding DiscoveryLine}" Style="{StaticResource Muted}" />
                         <Label Text="{Binding PushLine}" Style="{StaticResource Muted}" />
                         <Label Text="{Binding ServerErrors}" Style="{StaticResource Error}" />
+                        <controls:HintLabel Text="Discovery re-reads every market on both exchanges every 30 minutes and adds new suggestions to Review." />
                     </VerticalStackLayout>
                 </Border>
             </VerticalStackLayout>
