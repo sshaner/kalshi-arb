@@ -98,3 +98,21 @@ def test_responses_are_gzipped(client):
     db.add_candidates([(f"K{i}", f"P{i}", 90.0, 1.0, False) for i in range(50)])
     r = c.get("/api/candidates", headers={**AUTH, "Accept-Encoding": "gzip"})
     assert r.headers.get("content-encoding") == "gzip"
+
+
+def test_candidate_filters_and_count(client):
+    c, db = client
+    db.add_candidates([("K2", "P2", 99.0, 0.97, True), ("K3", "P3", 85.0, 1.02, False)])
+    db.x("UPDATE candidates SET rating = 9, kind = 'spread', net_cents = 2.1 WHERE kalshi_id = 'K2'")
+    db.x("UPDATE candidates SET rating = 3, kind = 'outcome', net_cents = -1 WHERE kalshi_id = 'K3'")
+
+    def ids(**q):
+        return [x["kalshi_id"] for x in c.get("/api/candidates", params=q, headers=AUTH).json()]
+
+    assert ids(min_rating=8) == ["K2"]
+    assert ids(kind="outcome") == ["K3"]
+    assert ids(orientation="inverse") == ["K2"]
+    assert ids(has_gap=True) == ["K2"]
+    assert ids(sort="rating")[0] == "K2"
+    n = c.get("/api/candidates/count", params={"min_rating": 8}, headers=AUTH).json()
+    assert n["matching"] == 1 and n["total"] == 3 and n["by_rating"]["9"] == 1

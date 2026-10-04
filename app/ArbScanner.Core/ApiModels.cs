@@ -75,6 +75,15 @@ public class Candidate
     public MarketView? Pmus { get; set; }
     public MatchDetails? MatchDetails { get; set; }
 
+    // 1-10 deal rating, computed on the server every discovery pass (server/arb/rating.py)
+    public int? Rating { get; set; }
+    public string? RatingLabel { get; set; }
+    public double? Confidence { get; set; }
+    public double? NetCents { get; set; }
+    public string? Kind { get; set; }
+    public string? ClosesAt { get; set; }
+    public List<string> RatingReasons { get; set; } = new();
+
     [JsonIgnore] public Explanation? Explanation { get; set; }
     [JsonIgnore] public string Suggestion => Inverted ? "Suggested: Inverse" : "Suggested: Same";
 
@@ -113,6 +122,10 @@ public class Opportunity
     public double? KTopSize { get; set; }
     public double? PTopSize { get; set; }
     public double? DaysToClose { get; set; }
+    public int? Rating { get; set; }
+    public string? RatingLabel { get; set; }
+    public double? Confidence { get; set; }
+    public List<string> RatingReasons { get; set; } = new();
 
     [JsonIgnore] public Explanation? Explanation { get; set; }
 
@@ -252,4 +265,11 @@ public static class Fmt
 
     public static string Date(string? iso) =>
         DateTimeOffset.TryParse(iso, out var d) ? d.ToLocalTime().ToString("MMM d, h:mm tt") : "–";
+}
+
+public class CandidateCount
+{
+    public int Matching { get; set; }
+    public int Total { get; set; }
+    public Dictionary<string, int> ByRating { get; set; } = new();
 }

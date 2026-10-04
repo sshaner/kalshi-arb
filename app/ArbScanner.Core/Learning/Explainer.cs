@@ -56,6 +56,7 @@ public static class Explainer
         var p = c.Pmus;
         var d = c.MatchDetails ?? new MatchDetails();
         var sections = new List<ExplanationSection>();
+        if (RatingSection(c.Rating, c.RatingLabel, c.RatingReasons) is { } rs) sections.Add(rs);
 
         // 1. What each market asks
         sections.Add(new("What each market asks", new[]
@@ -144,6 +145,7 @@ public static class Explainer
             "Unsure? Reject. A missed arb costs nothing; a wrong pair can lose both sides.",
         }));
 
+        if (c.Rating is int r) summary = $"{r}/10 {c.RatingLabel}. {summary}";
         return new Explanation("Explain this pair", summary, level, sections);
     }
 
@@ -186,6 +188,7 @@ public static class Explainer
         var k = o.Pair?.Kalshi;
         var p = o.Pair?.Pmus;
 
+        if (RatingSection(o.Rating, o.RatingLabel, o.RatingReasons) is { } rs) sections.Add(rs);
         sections.Add(new("The trade, step by step", new[]
         {
             $"1. Buy {n:N0} {Side(o.KSide)} on Kalshi ({Q(k?.Title ?? o.Pair?.KalshiId)}) at {C(o.KAvg)} average = {D(o.KCost)} + {D(o.KFee)} fee.",
@@ -261,6 +264,7 @@ public static class Explainer
             "Read both exchanges' resolution rules first (buttons below).",
         }, "paper"));
 
+        if (o.Rating is int r) verdict = $"{r}/10 {o.RatingLabel}. {verdict}";
         return new Explanation("Explain this opportunity", verdict, level, sections);
     }
 
@@ -326,6 +330,27 @@ public static class Explainer
         sections.Add(new("What happened", lines, "settlement"));
         return new Explanation("Explain this position", $"Settled as expected: {(pos.Pnl >= 0 ? "+" : "")}{D(pos.Pnl ?? 0)}.", VerdictLevel.Good, sections);
     }
+
+    // ============================================================================================ rating
+
+    /// <summary>What the 1-10 number means and which factors moved it (reasons come from the server).</summary>
+    public static ExplanationSection? RatingSection(int? rating, string? label, IReadOnlyList<string> reasons)
+    {
+        if (rating is not int r) return null;
+        var lines = new List<string> { $"{r}/10, {label}. {RatingMeaning(r)}" };
+        lines.AddRange(reasons.Select(x => "Factor: " + x));
+        lines.Add("The rating multiplies two things: how sure the match is (a shaky match can't score high) and how much profit is there after fees. 10 means every check passed and there's real profit. It still isn't risk-free: the exchanges can settle differently.");
+        return new ExplanationSection($"Deal rating: {r}/10", lines, "deal-rating");
+    }
+
+    public static string RatingMeaning(int r) => r switch
+    {
+        >= 9 => "Strong match and real profit after fees. As good as this app sees, but still read the rules.",
+        >= 7 => "Good match with some profit, or a great match with a little. Worth a close look.",
+        >= 5 => "Decent match; little or no profit right now. Approve it if the rules agree and let the scanner watch.",
+        >= 3 => "Good-looking match but no money on the table now, or a match with doubts. Low priority.",
+        _ => "Doubtful match or nothing to gain. Usually reject.",
+    };
 
     // ============================================================================================ helpers
 

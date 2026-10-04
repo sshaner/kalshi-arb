@@ -152,3 +152,27 @@ public class GlossaryTests
         Assert.Contains(Glossary.Search("annual"), e => e.Id == "annualized");
     }
 }
+
+public class RatingAndFilterTests
+{
+    [Fact]
+    public void Rating_section_lists_reasons_and_meaning()
+    {
+        var s = Explainer.RatingSection(9, "Excellent", new[] { "Match score 100/100", "6.4¢ per contract after fees (+)" });
+        Assert.NotNull(s);
+        Assert.Equal("Deal rating: 9/10", s!.Heading);
+        Assert.Contains(s.Lines, l => l.Contains("Factor: 6.4¢"));
+        Assert.Contains(s.Lines, l => l.Contains("isn't risk-free"));
+        Assert.NotNull(Glossary.Find("deal-rating"));
+    }
+
+    [Fact]
+    public void Filter_builds_query_and_description()
+    {
+        var f = new ReviewFilter { MinRating = 8, Kind = "spread", HasGap = true, ClosesWithinDays = 1, Query = "Chiefs vs" };
+        Assert.Equal("min_rating=8&kind=spread&has_gap=true&closes_within_days=1&q=Chiefs%20vs", f.ToQuery());
+        Assert.Equal(4, f.ActiveCount);
+        Assert.Equal("rating 8+ · spreads (win by x) · gap now · closing ≤24h", f.Describe());
+        Assert.Equal("", new ReviewFilter().ToQuery());
+    }
+}

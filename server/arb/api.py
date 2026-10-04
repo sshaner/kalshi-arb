@@ -8,7 +8,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 
-from . import arb_engine, config, matcher, paper
+from . import arb_engine, config, matcher, paper, rating
 from .models import KALSHI, PMUS
 
 
@@ -73,6 +73,9 @@ def create_app(db, scanner, pusher) -> FastAPI:
         out["p_top_size"] = _top_size(p_book, o["p_side"])
         closes = [m["close_time"] for m in (out["pair"] or {}).values() if isinstance(m, dict) and m.get("close_time")]
         out["days_to_close"] = arb_engine.days_until(min(closes)) if closes else None
+        cand = db.one("SELECT score FROM candidates WHERE id = ?", (pair["candidate_id"],)) if pair else None
+        out.update(rating.rate_opportunity({**o, "closes_at": min(closes) if closes else None},
+                                           (out["pair"] or {}).get("match_details"), cand and cand["score"]))
         if books:
             out["k_book"], out["p_book"] = k_book, p_book
         return out
@@ -94,7 +97,8 @@ def create_app(db, scanner, pusher) -> FastAPI:
     def opportunities(active: bool = True, limit: int = 100) -> list[dict]:
         rows = db.q("SELECT * FROM opportunities WHERE active = ? ORDER BY "
                     + ("profit DESC" if active else "last_seen DESC") + " LIMIT ?", (int(active), limit))
-        return [opp_view(o) for o in rows]
+        views = [opp_view(o) for o in rows]
+        return sorted(views, key=lambda v: -v["rating"]) if active else views
 
     @app.get("/api/opportunities/{opp_id}")
     def opportunity(opp_id: int) -> dict:
@@ -104,15 +108,65 @@ def create_app(db, scanner, pusher) -> FastAPI:
         return opp_view(o, books=True)
 
     # -- candidates ----------------------------------------------------------
+    SORTS = {
+        "rating": "c.rating IS NULL, c.rating DESC, c.net_cents DESC",
+        "gap": "c.net_cents IS NULL, c.net_cents DESC, c.rating DESC",
+        "closing": "c.closes_at IS NULL, c.closes_at ASC, c.rating DESC",
+        "score": "c.score DESC, c.rating DESC",
+    }
+
+    def candidate_filter(status: str, min_rating: int, kind: str, orientation: str, has_gap: bool,
+                         closes_within_days: float | None, q: str) -> tuple[str, list]:
+        where, args = ["c.status = ?"], [status]
+        if min_rating > 1:
+            where.append("c.rating >= ?")
+            args.append(min_rating)
+        if kind in ("outcome", "spread", "total"):
+            where.append("c.kind = ?")
+            args.append(kind)
+        if orientation in ("same", "inverse"):
+            where.append("c.inverted = ?")
+            args.append(1 if orientation == "inverse" else 0)
+        if has_gap:
+            where.append("c.net_cents > 0")
+        if closes_within_days:
+            cutoff = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() + closes_within_days * 86400))
+            where.append("c.closes_at IS NOT NULL AND c.closes_at <= ?")
+            args.append(cutoff)
+        if q.strip():
+            like = f"%{q.strip()}%"
+            where.append("(k.title LIKE ? OR k.event_title LIKE ? OR p.title LIKE ? OR p.event_title LIKE ?)")
+            args += [like] * 4
+        return " AND ".join(where), args
+
+    FROM_CANDIDATES = """FROM candidates c
+        LEFT JOIN markets k ON k.venue = 'kalshi' AND k.market_id = c.kalshi_id
+        LEFT JOIN markets p ON p.venue = 'pmus' AND p.market_id = c.pmus_id"""
+
     @app.get("/api/candidates")
-    def candidates(status: str = "pending", limit: int = 100) -> list[dict]:
-        rows = db.q("SELECT * FROM candidates WHERE status = ? ORDER BY CASE WHEN est_cost >= 0.9 AND est_cost < 1 THEN 0 WHEN est_cost < 0.9 THEN 1 ELSE 2 END, score DESC, est_cost LIMIT ?", (status, limit))
+    def candidates(status: str = "pending", limit: int = 100, offset: int = 0, min_rating: int = 1,
+                   kind: str = "any", orientation: str = "any", has_gap: bool = False,
+                   closes_within_days: float | None = None, q: str = "", sort: str = "rating") -> list[dict]:
+        where, args = candidate_filter(status, min_rating, kind, orientation, has_gap, closes_within_days, q)
+        rows = db.q(f"SELECT c.* {FROM_CANDIDATES} WHERE {where} ORDER BY {SORTS.get(sort, SORTS['rating'])} "
+                    "LIMIT ? OFFSET ?", (*args, min(limit, 500), offset))
         out = []
         for c in rows:
             k, pm = db.market(KALSHI, c["kalshi_id"]), db.market(PMUS, c["pmus_id"])
             out.append({**c, "inverted": bool(c["inverted"]), "kalshi": _market_view(k), "pmus": _market_view(pm),
-                        "match_details": details(k, pm)})
+                        "match_details": details(k, pm),
+                        "rating_reasons": json.loads(c["rating_reasons"]) if c.get("rating_reasons") else []})
         return out
+
+    @app.get("/api/candidates/count")
+    def candidate_count(status: str = "pending", min_rating: int = 1, kind: str = "any", orientation: str = "any",
+                        has_gap: bool = False, closes_within_days: float | None = None, q: str = "") -> dict:
+        where, args = candidate_filter(status, min_rating, kind, orientation, has_gap, closes_within_days, q)
+        matching = db.one(f"SELECT COUNT(*) AS n {FROM_CANDIDATES} WHERE {where}", tuple(args))["n"]
+        total = db.one("SELECT COUNT(*) AS n FROM candidates WHERE status = ?", (status,))["n"]
+        by_rating = {r["rating"]: r["n"] for r in db.q(
+            "SELECT rating, COUNT(*) AS n FROM candidates WHERE status = ? GROUP BY rating", (status,))}
+        return {"matching": matching, "total": total, "by_rating": by_rating}
 
     @app.post("/api/candidates/{cid}/approve")
     def approve(cid: int, body: ApproveBody) -> dict:

@@ -9,7 +9,7 @@ from datetime import datetime
 
 import httpx
 
-from . import arb_engine, config, matcher, paper
+from . import arb_engine, config, matcher, paper, rating
 from .db import Db
 from .models import KALSHI, PMUS
 from .push import Pusher
@@ -24,6 +24,41 @@ def _match_in_process(db_path: str, min_score: float, window_days: float) -> lis
     db = Db(db_path)
     return matcher.suggest(db.open_markets(KALSHI), db.open_markets(PMUS), min_score=min_score,
                            window_days=window_days, skip=db.known_candidate_keys())
+
+
+def _rate_in_process(db_path: str) -> int:
+    """Re-rate every pending candidate against the latest prices (child process; writes its own results)."""
+    db = Db(db_path)
+    rows = db.q("""SELECT c.id, c.score, c.inverted, k.title AS k_title, k.event_title AS k_event,
+                          k.event_time AS k_event_time, k.close_time AS k_close, k.yes_ask AS k_yes, k.no_ask AS k_no,
+                          k.fee_multiplier AS k_mult, p.title AS p_title, p.event_title AS p_event,
+                          p.alt_title AS p_alt, p.flipped AS p_flipped, p.event_time AS p_event_time,
+                          p.close_time AS p_close, p.yes_ask AS p_yes, p.no_ask AS p_no
+                   FROM candidates c
+                   JOIN markets k ON k.venue = 'kalshi' AND k.market_id = c.kalshi_id
+                   JOIN markets p ON p.venue = 'pmus' AND p.market_id = c.pmus_id
+                   WHERE c.status = 'pending'""")
+    updates, stale = [], []
+    for r in rows:
+        k = {"title": r["k_title"], "event_title": r["k_event"], "event_time": r["k_event_time"],
+             "close_time": r["k_close"], "yes_ask": r["k_yes"], "no_ask": r["k_no"], "fee_multiplier": r["k_mult"]}
+        p = {"title": r["p_title"], "event_title": r["p_event"], "alt_title": r["p_alt"], "flipped": r["p_flipped"],
+             "event_time": r["p_event_time"], "close_time": r["p_close"], "yes_ask": r["p_yes"], "no_ask": r["p_no"]}
+        if not matcher.still_compatible(k, p):
+            stale.append(r["id"])
+            continue
+        rated = rating.rate_candidate(k, p, r["score"] or 0, bool(r["inverted"]))
+        rated["rating_reasons"] = json.dumps(rated["rating_reasons"])
+        updates.append({**rated, "id": r["id"]})
+    for i in range(0, len(updates), 2000):
+        db.update_ratings(updates[i:i + 2000])
+    if stale:
+        # Hidden from Review, kept for the record (and so discovery never re-suggests them).
+        db._tx(lambda c: c.executemany(
+            "UPDATE candidates SET status = 'auto_rejected', decided_at = ? WHERE id = ?",
+            [(time.time(), i) for i in stale]))
+        log.info("auto-rejected %d stale suggestions", len(stale))
+    return len(updates)
 
 
 def _past(iso: str | None) -> bool:
@@ -83,7 +118,9 @@ class Scanner:
                 suggestions = await loop.run_in_executor(
                     pool, _match_in_process, self.db.path,
                     float(s["match_min_score"]), float(s["match_date_window_days"]))
-            await asyncio.to_thread(self.db.add_candidates, suggestions)
+                await asyncio.to_thread(self.db.add_candidates, suggestions)
+                # Re-rate every pending pair against the prices just fetched (also a child process).
+                st["rated"] = await loop.run_in_executor(pool, _rate_in_process, self.db.path)
             st["new_candidates"] = len(suggestions)
             st["error"] = "; ".join(errors) or None
             log.info("discovery: kalshi=%s pmus=%s new_candidates=%s", st["kalshi_markets"], st["pmus_markets"],
@@ -167,7 +204,15 @@ class Scanner:
                              (pair["id"],))
         if (recent and recent["t"] and time.time() - recent["t"] < cooldown) or _in_quiet_hours(s):
             return
-        title = f"Possible arb: {k_m.get('event_title', '')} — {k_m.get('title', '')}".strip(" —")[:120]
+        p_m = self.db.market(PMUS, pair["pmus_id"]) or {}
+        cand = (self.db.one("SELECT score FROM candidates WHERE id = ?", (pair["candidate_id"],))
+                if pair.get("candidate_id") else None)
+        rated = rating.rate_opportunity(
+            {"edge_cents": opp.edge_cents, "profit": opp.profit, "annualized": opp.annualized,
+             "closes_at": min(filter(None, [k_m.get("close_time"), p_m.get("close_time")]), default=None)},
+            matcher.match_details(k_m, p_m) if k_m and p_m else None, cand and cand["score"])
+        title = (f"{rated['rating']}/10 {rated['rating_label']} arb: "
+                 f"{k_m.get('event_title', '')} — {k_m.get('title', '')}").strip(" —")[:120]
         per_pair = (opp.cost + opp.fees) / opp.contracts * 100
         ann = f", ~{opp.annualized * 100:.0f}%/yr" if opp.annualized else ""
         body = (f"Buy {opp.kalshi.side.upper()} on Kalshi + {opp.pmus.side.upper()} on Polymarket US for "

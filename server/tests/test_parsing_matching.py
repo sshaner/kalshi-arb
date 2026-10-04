@@ -158,7 +158,7 @@ def test_pmus_head_to_head_parse():
 
 def test_prop_kind():
     assert matcher.prop_kind("Texas wins by over 20.5 points") == ("spread",)
-    assert matcher.prop_kind("Kyrian Jacquet -1.5 games") == ("spread",)
+    assert matcher.prop_kind("Kyrian Jacquet -1.5 games") == ("spread", "game")
     assert matcher.prop_kind("Over 20.5 total points") == ("total", "game")
     assert matcher.prop_kind("Indiana over 30.5 points") == ("total", "team")
     assert matcher.prop_kind("UTSA over 4.5 total touchdowns")[:2] == ("total", "team")
@@ -263,3 +263,13 @@ def test_upsert_marks_unseen_markets_closed(tmp_path):
     db.upsert_markets("kalshi", [mk("A"), mk("B")])
     db.upsert_markets("kalshi", [mk("B")])
     assert {m["market_id"] for m in db.open_markets("kalshi")} == {"B"}
+
+
+def test_games_vs_sets_rejected():
+    base = {"event_title": "Hurkacz vs Khachanov", "event_time": "2026-10-04T00:00:00Z",
+            "close_time": "2026-10-04T00:00:00Z", "yes_ask": 0.4, "no_ask": 0.62}
+    k = [{**base, "market_id": "K1", "title": "Hubert Hurkacz -1.5 games"}]
+    p = [{**base, "market_id": "P1", "event_title": "Hubert Hurkacz vs. Karen Khachanov",
+          "title": "Hubert Hurkacz wins by over 1.5 sets"}]
+    assert matcher.suggest(k, p, min_score=70, window_days=3, skip=set()) == []
+    assert not matcher.still_compatible(k[0], p[0])

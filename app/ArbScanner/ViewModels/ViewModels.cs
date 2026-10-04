@@ -193,24 +193,132 @@ public partial class OpportunityDetailViewModel(ApiClient api) : BaseViewModel, 
 }
 
 // ---------------------------------------------------------------------------------------------
-public partial class ReviewViewModel(ApiClient api) : BaseViewModel
+public partial class ReviewViewModel : BaseViewModel
 {
+    const string FilterKey = "review_filter";
+    const int PageSize = 50;
+    readonly ApiClient api;
+    int _offset;
+    bool _hasMore;
+    bool _loadingMore;
+    CancellationTokenSource? _searchCts;
+
+    public ReviewViewModel(ApiClient api)
+    {
+        this.api = api;
+        filter = LoadFilter();
+        searchText = filter.Query;
+    }
+
     public ObservableCollection<Candidate> Items { get; } = new();
     [ObservableProperty] bool isEmpty;
+    [ObservableProperty] ReviewFilter filter;
+    [ObservableProperty] string searchText;
+    [ObservableProperty] string showingText = "";
+
+    public string FiltersButtonText => Filter.ActiveCount == 0 ? "Filters" : $"Filters ({Filter.ActiveCount})";
+    public string QuickTopText => (Filter.MinRating >= 8 ? "✓ " : "") + "Rated 8+";
+    public string QuickGapText => (Filter.HasGap ? "✓ " : "") + "Gap now";
+    public string QuickSoonText => (Filter.ClosesWithinDays is <= 1 ? "✓ " : "") + "Closes ≤24h";
+
+    static ReviewFilter LoadFilter()
+    {
+        try
+        {
+            var json = Preferences.Default.Get(FilterKey, "");
+            return string.IsNullOrEmpty(json) ? new ReviewFilter() : System.Text.Json.JsonSerializer.Deserialize<ReviewFilter>(json) ?? new();
+        }
+        catch { return new ReviewFilter(); }
+    }
+
+    void Apply(ReviewFilter f)
+    {
+        Filter = f;
+        Preferences.Default.Set(FilterKey, System.Text.Json.JsonSerializer.Serialize(f));
+        OnPropertyChanged(nameof(FiltersButtonText));
+        OnPropertyChanged(nameof(QuickTopText));
+        OnPropertyChanged(nameof(QuickGapText));
+        OnPropertyChanged(nameof(QuickSoonText));
+        RefreshCommand.Execute(null);
+    }
+
+    partial void OnSearchTextChanged(string value)
+    {
+        // Debounce typing: search half a second after the last keystroke.
+        _searchCts?.Cancel();
+        var cts = _searchCts = new CancellationTokenSource();
+        _ = Task.Delay(500, cts.Token).ContinueWith(t =>
+        {
+            if (t.IsCanceled || value == Filter.Query) return;
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                var f = Filter.Clone();
+                f.Query = value ?? "";
+                Apply(f);
+            });
+        }, TaskScheduler.Default);
+    }
+
+    [RelayCommand]
+    Task OpenFilters() => Shell.Current.Navigation.PushModalAsync(new Views.FilterPage(Filter, Apply));
+
+    [RelayCommand]
+    void ToggleTop() => Apply(With(f => f.MinRating = f.MinRating >= 8 ? 1 : 8));
+
+    [RelayCommand]
+    void ToggleGap() => Apply(With(f => f.HasGap = !f.HasGap));
+
+    [RelayCommand]
+    void ToggleSoon() => Apply(With(f => f.ClosesWithinDays = f.ClosesWithinDays is <= 1 ? null : 1));
+
+    ReviewFilter With(Action<ReviewFilter> change)
+    {
+        var f = Filter.Clone();
+        change(f);
+        return f;
+    }
 
     [RelayCommand]
     Task Refresh() => Run(async () =>
     {
-        var list = await api.Candidates();
+        var countTask = api.CandidateCount(Filter);
+        var list = await api.Candidates(Filter, 0, PageSize);
         var s = await api.SettingsCached();
         Items.Clear();
+        AddPage(list, s);
+        _offset = list.Count;
+        _hasMore = list.Count == PageSize;
+        var count = await countTask;
+        ShowingText = Filter.ActiveCount == 0 && string.IsNullOrWhiteSpace(Filter.Query)
+            ? $"{count.Total:N0} pairs to review"
+            : $"{count.Matching:N0} of {count.Total:N0} pairs · {Filter.Describe()}";
+        IsEmpty = Items.Count == 0;
+    });
+
+    [RelayCommand]
+    async Task LoadMore()
+    {
+        if (!_hasMore || _loadingMore || IsBusy) return;
+        _loadingMore = true;
+        try
+        {
+            var list = await api.Candidates(Filter, _offset, PageSize);
+            AddPage(list, await api.SettingsCached());
+            _offset += list.Count;
+            _hasMore = list.Count == PageSize;
+        }
+        catch (Exception e) { Error = e.Message; }
+        finally { _loadingMore = false; }
+    }
+
+    void AddPage(List<Candidate> list, ScannerSettings s)
+    {
         foreach (var c in list)
         {
             c.Explanation = Explainer.ExplainCandidate(c, s);
             Items.Add(c);
         }
-        IsEmpty = Items.Count == 0;
-    });
+    }
 
     [RelayCommand]
     async Task Approve(Candidate c)

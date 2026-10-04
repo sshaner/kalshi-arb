@@ -14,13 +14,34 @@
         <ToolbarItem Text="Pairs" Command="{Binding PairsCommand}" />
         <ToolbarItem Text="Rescan" Command="{Binding DiscoverCommand}" />
     </ContentPage.ToolbarItems>
-    <Grid RowDefinitions="Auto,Auto,*" Padding="16,8,16,0" RowSpacing="8">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*" Padding="16,4,16,0" RowSpacing="6">
         <controls:HelpCard ScreenKey="review" />
-        <Label Grid.Row="1" Text="{Binding Error}" Style="{StaticResource Error}" />
-        <RefreshView Grid.Row="2" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
-            <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
+
+        <SearchBar Grid.Row="1" Text="{Binding SearchText}" Placeholder="Search team, player or topic"
+                   TextColor="{StaticResource Text}" PlaceholderColor="{StaticResource MutedColor}" />
+
+        <!-- Quick filters + full filter sheet -->
+        <ScrollView Grid.Row="2" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+            <HorizontalStackLayout Spacing="6">
+                <Button Text="{Binding QuickTopText}" Command="{Binding ToggleTopCommand}" Padding="12,6" FontSize="13" />
+                <Button Text="{Binding QuickGapText}" Command="{Binding ToggleGapCommand}" Padding="12,6" FontSize="13" />
+                <Button Text="{Binding QuickSoonText}" Command="{Binding ToggleSoonCommand}" Padding="12,6" FontSize="13" />
+                <Button Text="{Binding FiltersButtonText}" Command="{Binding OpenFiltersCommand}" Padding="12,6" FontSize="13"
+                        Style="{StaticResource Primary}" />
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto">
+            <Label Text="{Binding ShowingText}" Style="{StaticResource Muted}" VerticalOptions="Center" />
+            <controls:InfoButton Grid.Column="1" Term="deal-rating" />
+        </Grid>
+        <Label Grid.Row="4" Text="{Binding Error}" Style="{StaticResource Error}" />
+
+        <RefreshView Grid.Row="5" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
+            <CollectionView ItemsSource="{Binding Items}" SelectionMode="None"
+                            RemainingItemsThreshold="8" RemainingItemsThresholdReachedCommand="{Binding LoadMoreCommand}">
                 <CollectionView.EmptyView>
-                    <Label Text="Nothing to review. Tap Rescan to look for new matches."
+                    <Label Text="Nothing matches these filters. Loosen them, clear the search, or tap Rescan."
                            Style="{StaticResource Muted}" HorizontalTextAlignment="Center" Margin="24" />
                 </CollectionView.EmptyView>
                 <CollectionView.ItemsLayout>
@@ -30,10 +51,12 @@
                     <DataTemplate x:DataType="m:Candidate">
                         <Border Style="{StaticResource Card}">
                             <VerticalStackLayout Spacing="8">
-                                <Grid ColumnDefinitions="*,Auto,Auto">
-                                    <Label Text="{Binding GapDisplay}" Style="{StaticResource Muted}" VerticalOptions="Center" />
-                                    <Label Grid.Column="1" Text="{Binding ScoreDisplay}" Style="{StaticResource Muted}" VerticalOptions="Center" />
-                                    <controls:InfoButton Grid.Column="2" Term="match-score" />
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <controls:RatingBadge Rating="{Binding Rating}" RatingText="{Binding RatingLabel}" />
+                                    <Label Grid.Column="1" Text="{Binding GapDisplay}" Style="{StaticResource Muted}"
+                                           VerticalOptions="Center" HorizontalTextAlignment="End" />
+                                    <Label Grid.Column="2" Text="{Binding ScoreDisplay}" Style="{StaticResource Muted}"
+                                           VerticalOptions="Center" Margin="8,0,0,0" />
                                 </Grid>
                                 <VerticalStackLayout Spacing="2" IsVisible="{Binding IsOn, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}">
                                     <Label Text="{Binding Suggestion}" TextColor="{StaticResource Accent}" FontAttributes="Bold" />
@@ -51,7 +74,8 @@
                                     <Label Text="{Binding Pmus.Quote}" Style="{StaticResource Muted}" />
                                     <Label Text="{Binding Pmus.CloseDisplay, StringFormat='closes {0}'}" Style="{StaticResource Muted}" />
                                 </VerticalStackLayout>
-                                <Button Text="Explain this pair" IsVisible="{Binding IsOn, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}"
+                                <Button Text="Explain this pair"
+                                        IsVisible="{Binding IsOn, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}"
                                         Command="{Binding ExplainCommand, Source={RelativeSource AncestorType={x:Type vm:ReviewViewModel}}, x:DataType=vm:ReviewViewModel}"
                                         CommandParameter="{Binding .}" />
                                 <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">

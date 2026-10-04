@@ -83,7 +83,9 @@ def qualifiers(text: str) -> frozenset[str]:
 _SPREAD = re.compile(r"\bwins? by\b|\bby (over|more than)\b|(?<![a-z0-9.])[+-]\d+(\.\d+)?\b|\bspread\b|\bhandicap\b")
 _TOTAL = re.compile(r"\b(over|under)\b|\btotal\b|\bscored\b|\d\+ ")
 _STATS = ("touchdown", "corner", "rebound", "assist", "three", "strikeout", "hit", "home run", "card", "ace",
-          "passing", "rushing", "receiving", "yards", "sack", "save", "shot", "kill")
+          "passing", "rushing", "receiving", "yards", "sack", "save", "shot", "kill",
+          # Units that change the bet: "-1.5 games" is not "by over 1.5 sets" (tennis), maps/rounds (esports/MMA).
+          "game", "set", "map", "round")
 
 
 def prop_kind(label: str) -> tuple[str, ...]:
@@ -314,3 +316,11 @@ def match_details(k: dict, p: dict) -> dict:
         "event_similarity": round(fuzz.token_set_ratio(normalize(k.get("event_title", "")),
                                                        normalize(p.get("event_title", ""))), 1),
     }
+
+
+def still_compatible(k: dict, p: dict) -> bool:
+    """Re-check a stored suggestion against the current rules (rules tighten over time; old pairs shouldn't linger)."""
+    return (orientation(k, p) is not None
+            and qualifiers(f"{k.get('event_title', '')} {k.get('title', '')}")
+            == qualifiers(f"{p.get('event_title', '')} {p.get('title', '')}")
+            and same_matchup(k.get("event_title", ""), p.get("event_title", "")))

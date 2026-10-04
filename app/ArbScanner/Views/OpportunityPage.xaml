@@ -16,6 +16,7 @@
             <VerticalStackLayout Padding="16" Spacing="12">
                 <controls:HelpCard ScreenKey="opportunity" />
                 <Label Text="{Binding Error}" Style="{StaticResource Error}" />
+                <controls:RatingBadge Rating="{Binding Item.Rating}" RatingText="{Binding Item.RatingLabel}" />
                 <Label Text="{Binding Item.Title}" Style="{StaticResource H2}" />
                 <HorizontalStackLayout Spacing="12">
                     <Label Text="{Binding Item.EdgeDisplay}" Style="{StaticResource H1}" TextColor="{StaticResource Accent}" />

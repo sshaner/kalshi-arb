@@ -34,6 +34,13 @@ CREATE TABLE IF NOT EXISTS candidates (
     score REAL,
     est_cost REAL,  -- top-of-book hedged cost at suggestion time (<1 = visible gap)
     inverted INTEGER NOT NULL DEFAULT 0,  -- suggested orientation: Kalshi YES = Polymarket NO
+    rating INTEGER,          -- 1-10 deal rating (arb/rating.py), refreshed every discovery
+    rating_label TEXT,
+    confidence REAL,
+    net_cents REAL,          -- after-fee profit per contract at top of book (¢); NULL = no quotes
+    kind TEXT,               -- outcome | spread | total
+    closes_at TEXT,
+    rating_reasons TEXT,     -- JSON list
     status TEXT NOT NULL DEFAULT 'pending',  -- pending | approved | rejected
     created_at REAL,
     decided_at REAL,
@@ -94,6 +101,21 @@ class Db:
         self.path = path
         self._local = threading.local()
         self.conn.executescript(SCHEMA)
+        self._migrate()
+
+    # Columns added after the first deploy; CREATE TABLE IF NOT EXISTS won't add them to an existing DB.
+    MIGRATIONS = {
+        "candidates": {"rating": "INTEGER", "rating_label": "TEXT", "confidence": "REAL", "net_cents": "REAL",
+                       "kind": "TEXT", "closes_at": "TEXT", "rating_reasons": "TEXT"},
+    }
+
+    def _migrate(self) -> None:
+        for table, cols in self.MIGRATIONS.items():
+            have = {r["name"] for r in self.q(f"PRAGMA table_info({table})")}
+            for col, typ in cols.items():
+                if col not in have:
+                    self.x(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
+        self.x("CREATE INDEX IF NOT EXISTS ix_cand_status_rating ON candidates (status, rating DESC)")
 
     @property
     def conn(self) -> sqlite3.Connection:
@@ -171,6 +193,12 @@ class Db:
         return self.q("SELECT * FROM markets WHERE venue = ? AND open = 1", (venue,))
 
     # -- candidates / pairs --------------------------------------------------
+    def update_ratings(self, rows: list[dict]) -> None:
+        self._tx(lambda c: c.executemany(
+            """UPDATE candidates SET rating = :rating, rating_label = :rating_label, confidence = :confidence,
+               net_cents = :net_cents, kind = :kind, closes_at = :closes_at, rating_reasons = :rating_reasons
+               WHERE id = :id""", rows))
+
     def known_candidate_keys(self) -> set[tuple[str, str]]:
         return {(r["kalshi_id"], r["pmus_id"]) for r in self.q("SELECT kalshi_id, pmus_id FROM candidates")}
 

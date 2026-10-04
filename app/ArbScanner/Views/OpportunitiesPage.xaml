@@ -36,7 +36,9 @@
                                 <TapGestureRecognizer Command="{Binding OpenCommand, Source={RelativeSource AncestorType={x:Type vm:OpportunitiesViewModel}}, x:DataType=vm:OpportunitiesViewModel}"
                                                       CommandParameter="{Binding .}" />
                             </Border.GestureRecognizers>
-                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="2">
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="2">
+                                <controls:RatingBadge Grid.Row="4" Grid.ColumnSpan="2" Margin="0,6,0,0"
+                                                      Rating="{Binding Rating}" RatingText="{Binding RatingLabel}" />
                                 <Label Text="{Binding Title}" Style="{StaticResource H2}" LineBreakMode="TailTruncation" MaxLines="2" />
                                 <Label Grid.Column="1" Text="{Binding EdgeDisplay}" Style="{StaticResource H2}" TextColor="{StaticResource Accent}" />
                                 <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Legs}" Style="{StaticResource Muted}" />

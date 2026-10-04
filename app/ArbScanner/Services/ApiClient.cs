@@ -50,7 +50,15 @@ public class ApiClient(Credentials creds)
 
     public Task<Opportunity> Opportunity(long id) => Send<Opportunity>(HttpMethod.Get, $"/api/opportunities/{id}");
 
-    public Task<List<Candidate>> Candidates() => Send<List<Candidate>>(HttpMethod.Get, "/api/candidates?limit=200");
+    public Task<List<Candidate>> Candidates(ReviewFilter f, int offset = 0, int limit = 50)
+    {
+        var q = f.ToQuery();
+        return Send<List<Candidate>>(HttpMethod.Get,
+            $"/api/candidates?limit={limit}&offset={offset}&sort={f.Sort}{(q.Length > 0 ? "&" + q : "")}");
+    }
+
+    public Task<CandidateCount> CandidateCount(ReviewFilter f) =>
+        Send<CandidateCount>(HttpMethod.Get, "/api/candidates/count" + (f.ToQuery() is { Length: > 0 } q ? "?" + q : ""));
 
     public Task<Pair> Approve(long id, bool inverted, string notes) =>
         Send<Pair>(HttpMethod.Post, $"/api/candidates/{id}/approve", new { inverted, notes });

@@ -20,7 +20,8 @@ echo "== copying server code"
 tar -C "$ROOT/server" --exclude=__pycache__ --exclude='*.db*' --exclude=.env --exclude=venv -czf - . | ssh $HOST "tar -C $REMOTE -xzf -"
 
 echo "== venv + tests"
-ssh $HOST "cd $REMOTE && (test -d venv || python3 -m venv venv) && venv/bin/pip install -q -r requirements.txt && venv/bin/python -m pytest -q 2>&1 | tail -2"
+# Tests gate the restart: a failure stops the deploy before the running service is touched.
+ssh $HOST "cd $REMOTE && (test -d venv || python3 -m venv venv) && venv/bin/pip install -q -r requirements.txt &&   (venv/bin/python -m pytest -q > /tmp/kalshi-arb-pytest.log 2>&1; rc=\$?; tail -3 /tmp/kalshi-arb-pytest.log; exit \$rc)"   || { echo "!! tests failed; NOT restarting (full log: /tmp/kalshi-arb-pytest.log on the server)"; exit 1; }
 
 if ! ssh $HOST "test -f $REMOTE/.env"; then
   echo "!! $REMOTE/.env missing — create it (see server/.env.example) before starting"; exit 1
