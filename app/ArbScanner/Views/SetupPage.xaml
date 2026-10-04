@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ArbScanner.ViewModels"
+             x:Class="ArbScanner.Views.SetupPage"
+             x:DataType="vm:SetupViewModel">
+    <ScrollView>
+        <VerticalStackLayout Padding="24,80,24,24" Spacing="16">
+            <Label Text="Arb Scanner" Style="{StaticResource H1}" />
+            <Label Style="{StaticResource Muted}"
+                   Text="Connect to your scanner server. The token is in .tokens\kalshi-arb-api on your PC." />
+            <Label Text="Server URL" Style="{StaticResource Muted}" />
+            <Entry Text="{Binding Url}" Keyboard="Url" IsSpellCheckEnabled="False" />
+            <Label Text="API token" Style="{StaticResource Muted}" />
+            <Entry Text="{Binding Token}" IsPassword="True" IsSpellCheckEnabled="False" />
+            <Button Text="Connect" Style="{StaticResource Primary}" Command="{Binding ConnectCommand}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+            <Label Text="{Binding Error}" Style="{StaticResource Error}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

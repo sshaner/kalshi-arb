@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:views="clr-namespace:ArbScanner.Views"
+       x:Class="ArbScanner.AppShell"
+       Shell.TabBarBackgroundColor="{StaticResource Surface}"
+       Shell.TabBarForegroundColor="{StaticResource Accent}"
+       Shell.TabBarUnselectedColor="{StaticResource MutedColor}"
+       Shell.TabBarTitleColor="{StaticResource Accent}"
+       Shell.BackgroundColor="{StaticResource Background}"
+       Shell.ForegroundColor="{StaticResource Text}"
+       Shell.TitleColor="{StaticResource Text}">
+    <TabBar>
+        <ShellContent Title="Dashboard" Route="dashboard" Icon="{FontImageSource Glyph='◉', Size=22}"
+                      ContentTemplate="{DataTemplate views:DashboardPage}" />
+        <ShellContent Title="Opps" Route="opportunities" Icon="{FontImageSource Glyph='$', Size=22}"
+                      ContentTemplate="{DataTemplate views:OpportunitiesPage}" />
+        <ShellContent Title="Review" Route="review" Icon="{FontImageSource Glyph='⇄', Size=22}"
+                      ContentTemplate="{DataTemplate views:ReviewPage}" />
+        <ShellContent Title="Paper" Route="paper" Icon="{FontImageSource Glyph='▤', Size=22}"
+                      ContentTemplate="{DataTemplate views:PaperPage}" />
+        <ShellContent Title="Settings" Route="settings" Icon="{FontImageSource Glyph='⚙', Size=22}"
+                      ContentTemplate="{DataTemplate views:SettingsPage}" />
+    </TabBar>
+</Shell>

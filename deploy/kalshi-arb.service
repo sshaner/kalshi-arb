@@ -1,0 +1,15 @@
+[Unit]
+Description=Kalshi <-> Polymarket US arbitrage scanner + API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=sshaner
+WorkingDirectory=/projects/kalshi-arb
+ExecStart=/projects/kalshi-arb/venv/bin/python -m arb.main
+Restart=on-failure
+RestartSec=15
+EnvironmentFile=/projects/kalshi-arb/.env
+
+[Install]
+WantedBy=multi-user.target

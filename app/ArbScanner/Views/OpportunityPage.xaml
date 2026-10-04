@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ArbScanner.ViewModels"
+             x:Class="ArbScanner.Views.OpportunityPage"
+             x:DataType="vm:OpportunityDetailViewModel"
+             Title="Opportunity">
+    <RefreshView IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <VerticalStackLayout Padding="16" Spacing="12">
+                <Label Text="{Binding Error}" Style="{StaticResource Error}" />
+                <Label Text="{Binding Item.Title}" Style="{StaticResource H2}" />
+                <HorizontalStackLayout Spacing="12">
+                    <Label Text="{Binding Item.EdgeDisplay}" Style="{StaticResource H1}" TextColor="{StaticResource Accent}" />
+                    <Label Text="{Binding Item.AnnualizedDisplay}" VerticalOptions="End" Style="{StaticResource Muted}" />
+                </HorizontalStackLayout>
+                <Label Text="{Binding Item.Totals}" />
+                <Label Text="{Binding Item.SeenDisplay}" Style="{StaticResource Muted}" />
+
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Kalshi" Style="{StaticResource H2}" TextColor="{StaticResource Kalshi}" />
+                        <Label Text="{Binding Item.Pair.Kalshi.Display}" Style="{StaticResource Muted}" />
+                        <Label Text="{Binding Item.KalshiLeg}" />
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding KalshiBook}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <Label Text="{Binding .}" Style="{StaticResource Muted}" FontFamily="Courier" />
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                        <Button Text="Open on Kalshi" Command="{Binding OpenKalshiCommand}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Polymarket US" Style="{StaticResource H2}" TextColor="{StaticResource Pmus}" />
+                        <Label Text="{Binding Item.Pair.Pmus.Display}" Style="{StaticResource Muted}" />
+                        <Label Text="{Binding Item.PmusLeg}" />
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding PmusBook}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <Label Text="{Binding .}" Style="{StaticResource Muted}" FontFamily="Courier" />
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                        <Button Text="Open on Polymarket" Command="{Binding OpenPmusCommand}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label Style="{StaticResource Muted}"
+                       Text="Paper mode: a simulated position was opened at these prices. Check both venues' resolution rules before trading for real." />
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

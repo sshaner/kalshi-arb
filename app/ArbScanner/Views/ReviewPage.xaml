@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ArbScanner.ViewModels"
+             xmlns:m="clr-namespace:ArbScanner.Models"
+             x:Class="ArbScanner.Views.ReviewPage"
+             x:DataType="vm:ReviewViewModel"
+             Title="Review pairs">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Pairs" Command="{Binding PairsCommand}" />
+        <ToolbarItem Text="Rescan" Command="{Binding DiscoverCommand}" />
+    </ContentPage.ToolbarItems>
+    <Grid RowDefinitions="Auto,*" Padding="16,8,16,0" RowSpacing="8">
+        <Label Text="{Binding Error}" Style="{StaticResource Error}" />
+        <RefreshView Grid.Row="1" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
+            <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <Label Text="Nothing to review. Tap Rescan to look for new matches."
+                           Style="{StaticResource Muted}" HorizontalTextAlignment="Center" Margin="24" />
+                </CollectionView.EmptyView>
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="m:Candidate">
+                        <Border Style="{StaticResource Card}">
+                            <VerticalStackLayout Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Text="{Binding GapDisplay}" Style="{StaticResource Muted}" />
+                                    <Label Grid.Column="1" Text="{Binding ScoreDisplay}" Style="{StaticResource Muted}" />
+                                </Grid>
+                                <VerticalStackLayout Spacing="2">
+                                    <Label Text="KALSHI" FontSize="11" TextColor="{StaticResource Kalshi}" FontAttributes="Bold" />
+                                    <Label Text="{Binding Kalshi.Display}" />
+                                    <Label Text="{Binding Kalshi.Quote}" Style="{StaticResource Muted}" />
+                                    <Label Text="{Binding Kalshi.CloseDisplay, StringFormat='closes {0}'}" Style="{StaticResource Muted}" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Spacing="2">
+                                    <Label Text="POLYMARKET US" FontSize="11" TextColor="{StaticResource Pmus}" FontAttributes="Bold" />
+                                    <Label Text="{Binding Pmus.Display}" />
+                                    <Label Text="{Binding Pmus.Quote}" Style="{StaticResource Muted}" />
+                                    <Label Text="{Binding Pmus.CloseDisplay, StringFormat='closes {0}'}" Style="{StaticResource Muted}" />
+                                </VerticalStackLayout>
+                                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
+                                    <Button Text="Same" Style="{StaticResource Primary}" Padding="4,8"
+                                            Command="{Binding ApproveCommand, Source={RelativeSource AncestorType={x:Type vm:ReviewViewModel}}, x:DataType=vm:ReviewViewModel}"
+                                            CommandParameter="{Binding .}" />
+                                    <Button Grid.Column="1" Text="Inverse" Padding="4,8"
+                                            Command="{Binding ApproveInvertedCommand, Source={RelativeSource AncestorType={x:Type vm:ReviewViewModel}}, x:DataType=vm:ReviewViewModel}"
+                                            CommandParameter="{Binding .}" />
+                                    <Button Grid.Column="2" Text="Rules" Padding="4,8"
+                                            Command="{Binding RulesCommand, Source={RelativeSource AncestorType={x:Type vm:ReviewViewModel}}, x:DataType=vm:ReviewViewModel}"
+                                            CommandParameter="{Binding .}" />
+                                    <Button Grid.Column="3" Text="Reject" Style="{StaticResource DangerButton}" Padding="4,8"
+                                            Command="{Binding RejectCommand, Source={RelativeSource AncestorType={x:Type vm:ReviewViewModel}}, x:DataType=vm:ReviewViewModel}"
+                                            CommandParameter="{Binding .}" />
+                                </Grid>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

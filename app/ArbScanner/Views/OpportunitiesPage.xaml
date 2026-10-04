@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ArbScanner.ViewModels"
+             xmlns:m="clr-namespace:ArbScanner.Models"
+             x:Class="ArbScanner.Views.OpportunitiesPage"
+             x:DataType="vm:OpportunitiesViewModel"
+             Title="Opportunities">
+    <Grid RowDefinitions="Auto,Auto,*" Padding="16,8,16,0" RowSpacing="8">
+        <HorizontalStackLayout Spacing="10">
+            <Label Text="Live only" VerticalOptions="Center" Style="{StaticResource Muted}" />
+            <Switch IsToggled="{Binding ShowActive}" />
+        </HorizontalStackLayout>
+        <Label Grid.Row="1" Text="{Binding Error}" Style="{StaticResource Error}" />
+        <RefreshView Grid.Row="2" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
+            <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <Label Text="No opportunities right now. Approve more pairs in Review to widen the net."
+                           Style="{StaticResource Muted}" HorizontalTextAlignment="Center" Margin="24" />
+                </CollectionView.EmptyView>
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="m:Opportunity">
+                        <Border Style="{StaticResource Card}">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding OpenCommand, Source={RelativeSource AncestorType={x:Type vm:OpportunitiesViewModel}}, x:DataType=vm:OpportunitiesViewModel}"
+                                                      CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="2">
+                                <Label Text="{Binding Title}" Style="{StaticResource H2}" LineBreakMode="TailTruncation" MaxLines="2" />
+                                <Label Grid.Column="1" Text="{Binding EdgeDisplay}" Style="{StaticResource H2}" TextColor="{StaticResource Accent}" />
+                                <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Legs}" Style="{StaticResource Muted}" />
+                                <Label Grid.Row="2" Text="{Binding ProfitDisplay}" />
+                                <Label Grid.Row="2" Grid.Column="1" Text="{Binding AnnualizedDisplay}" Style="{StaticResource Muted}" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

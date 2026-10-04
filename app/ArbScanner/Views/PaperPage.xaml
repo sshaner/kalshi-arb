@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ArbScanner.ViewModels"
+             xmlns:m="clr-namespace:ArbScanner.Models"
+             x:Class="ArbScanner.Views.PaperPage"
+             x:DataType="vm:PaperViewModel"
+             Title="Paper trading">
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="16,8,16,0" RowSpacing="8">
+        <Border Style="{StaticResource Card}">
+            <VerticalStackLayout Spacing="2">
+                <Label Text="Realized P&amp;L" Style="{StaticResource Muted}" />
+                <Label Text="{Binding Headline}" Style="{StaticResource H1}" TextColor="{StaticResource Accent}" />
+                <Label Text="{Binding Subline}" Style="{StaticResource Muted}" />
+                <Label Text="{Binding DivergentLine}" TextColor="{StaticResource Warn}" />
+            </VerticalStackLayout>
+        </Border>
+        <HorizontalStackLayout Grid.Row="1" Spacing="10">
+            <Label Text="Open positions" VerticalOptions="Center" Style="{StaticResource Muted}" />
+            <Switch IsToggled="{Binding ShowOpen}" />
+        </HorizontalStackLayout>
+        <Label Grid.Row="2" Text="{Binding Error}" Style="{StaticResource Error}" />
+        <RefreshView Grid.Row="3" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
+            <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <Label Text="No positions yet." Style="{StaticResource Muted}" HorizontalTextAlignment="Center" Margin="24" />
+                </CollectionView.EmptyView>
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="m:PaperPosition">
+                        <Border Style="{StaticResource Card}">
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="{Binding Title}" Style="{StaticResource H2}" />
+                                <Label Text="{Binding Detail}" />
+                                <Label Text="{Binding Opened, StringFormat='opened {0}'}" Style="{StaticResource Muted}" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

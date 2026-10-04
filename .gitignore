@@ -1,0 +1,22 @@
+# secrets
+.env
+*.p8
+*.p12
+*.mobileprovision
+*.cer
+*.key
+
+# server
+server/venv/
+**/__pycache__/
+*.db
+*.db-wal
+*.db-shm
+.pytest_cache/
+
+# app
+app/**/bin/
+app/**/obj/
+.vs/
+*.user
+tools/.venv/

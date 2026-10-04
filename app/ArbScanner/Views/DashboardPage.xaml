@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ArbScanner.ViewModels"
+             x:Class="ArbScanner.Views.DashboardPage"
+             x:DataType="vm:DashboardViewModel"
+             Title="Dashboard">
+    <RefreshView IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <VerticalStackLayout Padding="16" Spacing="12">
+                <Label Text="{Binding Error}" Style="{StaticResource Error}" />
+
+                <Border Style="{StaticResource Card}">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                        <Label Text="{Binding ScannerState}" Style="{StaticResource H1}" />
+                        <Label Grid.Row="1" Text="{Binding PricesLine}" Style="{StaticResource Muted}" />
+                        <Button Grid.Column="1" Grid.RowSpan="2" Text="Pause / Resume" VerticalOptions="Center"
+                                Command="{Binding ToggleScanningCommand}" />
+                    </Grid>
+                </Border>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">
+                    <Border Style="{StaticResource Card}">
+                        <VerticalStackLayout>
+                            <Label Text="Live opps" Style="{StaticResource Muted}" />
+                            <Label Text="{Binding LiveOpps}" Style="{StaticResource H1}" TextColor="{StaticResource Accent}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Card}">
+                        <VerticalStackLayout>
+                            <Label Text="Best edge" Style="{StaticResource Muted}" />
+                            <Label Text="{Binding BestEdge}" Style="{StaticResource H1}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Row="1" Style="{StaticResource Card}">
+                        <VerticalStackLayout>
+                            <Label Text="To review" Style="{StaticResource Muted}" />
+                            <Label Text="{Binding Pending}" Style="{StaticResource H1}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}">
+                        <VerticalStackLayout>
+                            <Label Text="Active pairs" Style="{StaticResource Muted}" />
+                            <Label Text="{Binding Pairs}" Style="{StaticResource H1}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Paper trading" Style="{StaticResource H2}" />
+                        <Label Text="{Binding PaperRealized}" />
+                        <Label Text="{Binding PaperOpen}" Style="{StaticResource Muted}" />
+                        <Label Text="{Binding PaperExpected}" Style="{StaticResource Muted}" />
+                        <Label Text="{Binding Divergent}" TextColor="{StaticResource Warn}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Server" Style="{StaticResource H2}" />
+                        <Label Text="{Binding DiscoveryLine}" Style="{StaticResource Muted}" />
+                        <Label Text="{Binding PushLine}" Style="{StaticResource Muted}" />
+                        <Label Text="{Binding ServerErrors}" Style="{StaticResource Error}" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

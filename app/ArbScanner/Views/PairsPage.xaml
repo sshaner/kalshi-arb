@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ArbScanner.ViewModels"
+             xmlns:m="clr-namespace:ArbScanner.Models"
+             x:Class="ArbScanner.Views.PairsPage"
+             x:DataType="vm:PairsViewModel"
+             Title="Active pairs">
+    <Grid RowDefinitions="Auto,*" Padding="16,8,16,0" RowSpacing="8">
+        <Label Text="{Binding Error}" Style="{StaticResource Error}" />
+        <RefreshView Grid.Row="1" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
+            <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <Label Text="No approved pairs yet." Style="{StaticResource Muted}" HorizontalTextAlignment="Center" Margin="24" />
+                </CollectionView.EmptyView>
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="m:Pair">
+                        <Border Style="{StaticResource Card}">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ManageCommand, Source={RelativeSource AncestorType={x:Type vm:PairsViewModel}}, x:DataType=vm:PairsViewModel}"
+                                                      CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="{Binding Title}" Style="{StaticResource H2}" />
+                                <Label Text="{Binding Pmus.Display}" Style="{StaticResource Muted}" TextColor="{StaticResource Pmus}" />
+                                <Label Text="{Binding Subtitle}" Style="{StaticResource Muted}" />
+                                <Label Text="{Binding LastError}" Style="{StaticResource Error}" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

@@ -1,0 +1,371 @@
+{
+ "events": [
+  {
+   "id": "6435",
+   "chatChannel": {
+    "id": "mlb-nlchamp-2026-09-27",
+    "type": "CHAT_CHANNEL_TYPE_MESSAGING",
+    "chatMemberCount": 0
+   },
+   "ticker": "mlb-nlchamp-2026-09-27",
+   "slug": "mlb-nlchamp-2026-09-27",
+   "title": "National League Champion",
+   "description": "National League Champion",
+   "startDate": "2026-09-07T00:00:00Z",
+   "endDate": "2026-10-20T23:59:00Z",
+   "image": "https://static.polymarket.us/images/Random/Pennant-Winners-NL.png",
+   "active": true,
+   "closed": false,
+   "archived": false,
+   "category": "sports",
+   "createdAt": "2026-03-19T14:41:53Z",
+   "updatedAt": "2026-10-04T00:54:30Z",
+   "startTime": "2026-09-07T00:00:00Z",
+   "seriesSlug": "mlb-2026",
+   "period": "NS",
+   "live": false,
+   "markets": [
+    {
+     "id": "7909",
+     "question": "National League Champion",
+     "slug": "tec-mlb-nlchamp-2026-09-27-lad",
+     "endDate": "2026-11-06T21:20:09Z",
+     "category": "sports",
+     "startDate": "2026-03-19T14:32:23Z",
+     "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/us-logos/mlb/Polymarket_LAD.png",
+     "description": "Will Los Angeles Dodgers win the 2026 National League pennant, scheduled for October 23, 2026? If the event is postponed, delayed, or rescheduled, the expiration date will be amended to align with the new event date. If the event is not rescheduled within two weeks of the originally scheduled date, the instrument may settle at last fair market prices. If the event is canceled, the instrument may settle at last fair market prices. If the team is eliminated from contention, the instrument will settle to $0.00.",
+     "active": true,
+     "marketType": "futures",
+     "closed": false,
+     "createdAt": "2026-03-19T14:41:53Z",
+     "updatedAt": "2026-10-04T00:54:30Z",
+     "archived": false,
+     "orderPriceMinTickSize": 0.001,
+     "gameStartTime": "2026-09-07T00:00:00Z",
+     "manualActivation": false,
+     "sportsMarketType": "futures",
+     "marketSides": [
+      {
+       "id": "15817",
+       "marketSideType": "MARKET_SIDE_TYPE_INSTRUMENT",
+       "identifier": "tec-mlb-nlchamp-2026-09-27-lad",
+       "createdAt": "2026-03-19T14:41:53Z",
+       "updatedAt": "2026-03-19T14:41:53Z",
+       "description": "Yes",
+       "price": "0.4910",
+       "marketId": 7909,
+       "long": true,
+       "teamId": 3014,
+       "quote": {
+        "value": "0.4980",
+        "currency": "USD"
+       },
+       "tradable": true
+      },
+      {
+       "id": "15818",
+       "marketSideType": "MARKET_SIDE_TYPE_INSTRUMENT",
+       "identifier": "tec-mlb-nlchamp-2026-09-27-lad",
+       "createdAt": "2026-03-19T14:41:53Z",
+       "updatedAt": "2026-03-19T14:41:53Z",
+       "description": "No",
+       "price": "0.4980",
+       "marketId": 7909,
+       "long": false,
+       "teamId": 3014,
+       "quote": {
+        "value": "0.509",
+        "currency": "USD"
+       },
+       "tradable": true
+      }
+     ],
+     "outcomes": "[\"No\",\"Yes\"]",
+     "outcomePrices": "[\"0.4910\",\"0.4980\"]",
+     "ep3Status": "OPEN",
+     "status": "MARKET_STATUS_OPEN",
+     "assetPriceTerms": null,
+     "sportsMarketTypeV2": "SPORTS_MARKET_TYPE_FUTURE",
+     "hidden": false,
+     "tags": [],
+     "title": "Los Angeles Dodgers",
+     "subtitle": "",
+     "color": "#005A9C",
+     "feeCoefficient": 0.0695,
+     "bestBidQuote": {
+      "value": "0.4910",
+      "currency": "USD"
+     },
+     "bestAskQuote": {
+      "value": "0.4980",
+      "currency": "USD"
+     },
+     "titleShort": "Los Angeles Dodgers",
+     "ep3SyncedAt": "2026-10-01T11:50:10Z",
+     "minimumTradeQty": 1,
+     "comboEnabled": false
+    },
+    {
+     "id": "7913",
+     "question": "National League Champion",
+     "slug": "tec-mlb-nlchamp-2026-09-27-mil",
+     "endDate": "2026-11-06T21:20:09Z",
+     "category": "sports",
+     "startDate": "2026-03-19T14:32:23Z",
+     "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/us-logos/mlb/Polymarket_MIL.png",
+     "description": "Will Milwaukee Brewers win the 2026 National League pennant, scheduled for October 23, 2026? If the event is postponed, delayed, or rescheduled, the expiration date will be amended to align with the new event date. If the event is not rescheduled within two weeks of the originally scheduled date, the instrument may settle at last fair market prices. If the event is canceled, the instrument may settle at last fair market prices. If the team is eliminated from contention, the instrument will settle to $0.00.",
+     "active": true,
+     "marketType": "futures",
+     "closed": false,
+     "createdAt": "2026-03-19T14:41:53Z",
+     "updatedAt": "2026-10-04T00:38:49Z",
+     "archived": false,
+     "orderPriceMinTickSize": 0.001,
+     "gameStartTime": "2026-09-07T00:00:00Z",
+     "manualActivation": false,
+     "sportsMarketType": "futures",
+     "marketSides": [
+      {
+       "id": "15825",
+       "marketSideType": "MARKET_SIDE_TYPE_INSTRUMENT",
+       "identifier": "tec-mlb-nlchamp-2026-09-27-mil",
+       "createdAt": "2026-03-19T14:41:53Z",
+       "updatedAt": "2026-03-19T14:41:53Z",
+       "description": "Yes",
+       "price": "0.1430",
+       "marketId": 7913,
+       "long": true,
+       "teamId": 3016,
+       "quote": {
+        "value": "0.2770",
+        "currency": "USD"
+       },
+       "tradable": true
+      },
+      {
+       "id": "15826",
+       "marketSideType": "MARKET_SIDE_TYPE_INSTRUMENT",
+       "identifier": "tec-mlb-nlchamp-2026-09-27-mil",
+       "createdAt": "2026-03-19T14:41:53Z",
+       "updatedAt": "2026-03-19T14:41:53Z",
+       "description": "No",
+       "price": "0.2770",
+       "marketId": 7913,
+       "long": false,
+       "teamId": 3016,
+       "quote": {
+        "value": "0.857",
+        "currency": "USD"
+       },
+       "tradable": true
+      }
+     ],
+     "outcomes": "[\"No\",\"Yes\"]",
+     "outcomePrices": "[\"0.1430\",\"0.2770\"]",
+     "ep3Status": "OPEN",
+     "status": "MARKET_STATUS_OPEN",
+     "assetPriceTerms": null,
+     "sportsMarketTypeV2": "SPORTS_MARKET_TYPE_FUTURE",
+     "hidden": false,
+     "tags": [],
+     "title": "Milwaukee Brewers",
+     "subtitle": "",
+     "color": "#BD9000",
+     "feeCoefficient": 0.0695,
+     "bestBidQuote": {
+      "value": "0.1430",
+      "currency": "USD"
+     },
+     "bestAskQuote": {
+      "value": "0.2770",
+      "currency": "USD"
+     },
+     "titleShort": "Milwaukee Brewers",
+     "ep3SyncedAt": "2026-10-01T11:50:10Z",
+     "minimumTradeQty": 1,
+     "comboEnabled": false
+    }
+   ],
+   "hidden": false,
+   "tags": [
+    {
+     "id": "2",
+     "label": "Sports",
+     "slug": "sports",
+     "createdAt": "2025-09-25T16:13:27Z",
+     "updatedAt": "2026-10-04T00:54:57Z",
+     "subtags": [],
+     "hub": null,
+     "featuredEventIds": []
+    },
+    {
+     "id": "4",
+     "label": "MLB",
+     "slug": "mlb",
+     "createdAt": "2025-09-25T16:13:36Z",
+     "updatedAt": "2026-10-04T00:54:57Z",
+     "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/league-images/MLB.png",
+     "tradable": false,
+     "league": {
+      "id": 5,
+      "name": "MLB",
+      "sportId": 5,
+      "tagId": 4,
+      "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/league-images/MLB.png",
+      "resolution": "https://www.mlb.com/",
+      "ordering": "away",
+      "activeSeriesId": 15,
+      "isOperational": true,
+      "automaticResolution": false,
+      "createdAt": "2026-03-05T18:30:42Z",
+      "slug": "mlb",
+      "abbreviation": "MLB"
+     },
+     "parentId": 15,
+     "subtags": [],
+     "hub": null,
+     "featuredEventIds": []
+    },
+    {
+     "id": "15",
+     "label": "Baseball",
+     "slug": "baseball",
+     "createdAt": "2026-03-05T18:30:42Z",
+     "updatedAt": "2026-10-04T00:54:57Z",
+     "image": "https://static.polymarket.us/images/new-category-icons/Icon-Baseball.png",
+     "tradable": false,
+     "sport": {
+      "id": 5,
+      "name": "Baseball",
+      "tagId": 15,
+      "createdAt": "2026-03-05T18:30:42Z",
+      "slug": "baseball",
+      "image": "https://static.polymarket.us/images/new-category-icons/Icon-Baseball.png"
+     },
+     "subtags": [
+      {
+       "id": "4",
+       "label": "MLB",
+       "slug": "mlb",
+       "createdAt": "2025-09-25T16:13:36Z",
+       "updatedAt": "2026-10-04T00:54:57Z",
+       "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/league-images/MLB.png",
+       "tradable": false,
+       "league": {
+        "id": 5,
+        "name": "MLB",
+        "sportId": 5,
+        "tagId": 4,
+        "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/league-images/MLB.png",
+        "resolution": "https://www.mlb.com/",
+        "ordering": "away",
+        "activeSeriesId": 15,
+        "isOperational": true,
+        "automaticResolution": false,
+        "createdAt": "2026-03-05T18:30:42Z",
+        "slug": "mlb",
+        "abbreviation": "MLB"
+       },
+       "parentId": 15,
+       "subtags": [],
+       "hub": null,
+       "featuredEventIds": []
+      },
+      {
+       "id": "547",
+       "label": "NBP",
+       "slug": "nbp",
+       "tradable": false,
+       "parentId": 15,
+       "subtags": [],
+       "hub": null,
+       "featuredEventIds": []
+      },
+      {
+       "id": "543",
+       "label": "KBO",
+       "slug": "kbo",
+       "updatedAt": "2026-10-04T00:24:45Z",
+       "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/kbo3-e54d75ea82.png",
+       "tradable": false,
+       "league": {
+        "id": 60,
+        "name": "KBO",
+        "sportId": 5,
+        "tagId": 543,
+        "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/kbo3-e54d75ea82.png",
+        "ordering": "home",
+        "activeSeriesId": 81,
+        "isOperational": true,
+        "automaticResolution": false,
+        "createdAt": "2026-06-22T18:51:07Z",
+        "slug": "kbo"
+       },
+       "parentId": 15,
+       "subtags": [],
+       "hub": null,
+       "featuredEventIds": []
+      }
+     ],
+     "hub": null,
+     "featuredEventIds": []
+    },
+    {
+     "id": "876",
+     "label": "Postseason",
+     "slug": "postseason",
+     "updatedAt": "2026-10-04T00:54:57Z",
+     "tradable": false,
+     "subtags": [],
+     "hub": null,
+     "featuredEventIds": []
+    },
+    {
+     "id": "907",
+     "label": "Leagues",
+     "slug": "leagues",
+     "updatedAt": "2026-10-04T00:54:57Z",
+     "tradable": false,
+     "subtags": [],
+     "hub": null,
+     "featuredEventIds": []
+    }
+   ],
+   "sortType": "price",
+   "primaryTag": {
+    "id": "4",
+    "label": "MLB",
+    "slug": "mlb",
+    "createdAt": "2025-09-25T16:13:36Z",
+    "updatedAt": "2026-10-04T00:54:57Z",
+    "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/league-images/MLB.png",
+    "tradable": false,
+    "league": {
+     "id": 5,
+     "name": "MLB",
+     "sportId": 5,
+     "tagId": 4,
+     "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/league-images/MLB.png",
+     "resolution": "https://www.mlb.com/",
+     "ordering": "away",
+     "activeSeriesId": 15,
+     "isOperational": true,
+     "automaticResolution": false,
+     "createdAt": "2026-03-05T18:30:42Z",
+     "slug": "mlb",
+     "abbreviation": "MLB"
+    },
+    "parentId": 15,
+    "subtags": [],
+    "hub": null,
+    "featuredEventIds": []
+   },
+   "streamProvider": "",
+   "streamRequiresAuth": false,
+   "marketCounts": {
+    "numMarkets": 4,
+    "numSpreadsAndTotalsMarkets": 0
+   }
+  }
+ ]
+}
