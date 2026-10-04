@@ -36,8 +36,12 @@ class DeviceBody(BaseModel):
 def _market_view(m: dict | None) -> dict | None:
     if not m:
         return None
-    return {k: m.get(k) for k in ("venue", "market_id", "event_title", "title", "alt_title", "flipped", "close_time", "event_time", "url",
-                                  "rules", "yes_ask", "no_ask", "open")}
+    out = {k: m.get(k) for k in ("venue", "market_id", "event_title", "title", "alt_title", "flipped", "close_time",
+                                 "event_time", "url", "rules", "yes_ask", "no_ask", "open")}
+    # SQLite stores these as 0/1; the app's JSON decoder needs real booleans.
+    out["flipped"] = bool(out["flipped"])
+    out["open"] = bool(out["open"])
+    return out
 
 
 def _top_size(book: dict, side: str) -> float | None:

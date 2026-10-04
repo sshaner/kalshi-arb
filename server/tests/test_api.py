@@ -80,3 +80,14 @@ def test_candidates_include_match_details(client):
     c, _ = client
     cand = c.get("/api/candidates", headers=AUTH).json()[0]
     assert "orientation" in cand["match_details"]
+
+
+def test_flags_are_json_booleans(client):
+    """The iOS app's System.Text.Json rejects 0/1 for bool fields (crashed the Review screen)."""
+    c, db = client
+    db.x("UPDATE markets SET flipped = 1")
+    cand = c.get("/api/candidates", headers=AUTH).json()[0]
+    for side in ("kalshi", "pmus"):
+        assert cand[side]["flipped"] is True and cand[side]["open"] is True
+    assert isinstance(cand["inverted"], bool)
+    assert isinstance(cand["match_details"]["flipped"], bool)
