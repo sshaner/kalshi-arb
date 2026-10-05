@@ -83,6 +83,14 @@ public class Candidate
     public string? Kind { get; set; }
     public string? ClosesAt { get; set; }
     public List<string> RatingReasons { get; set; } = new();
+    /// <summary>Profit per dollar spent at last-scan prices (after fees); null when there's no gap.</summary>
+    public double? Roi { get; set; }
+    public double? Annualized { get; set; }
+
+    [JsonIgnore] public string ReturnDisplay => Roi is double r
+        ? $"Return {r * 100:0.##}%" + (Annualized is double a ? $" · ~{Returns.Yearly(a)}/yr" : "")
+        : "No return at last-scan prices";
+    [JsonIgnore] public bool HasReturn => Roi is > 0;
 
     [JsonIgnore] public Explanation? Explanation { get; set; }
     [JsonIgnore] public string Suggestion => Inverted ? "Suggested: Inverse" : "Suggested: Same";
@@ -133,7 +141,8 @@ public class Opportunity
     public string Legs => $"Kalshi {KSide.ToUpper()} {KAvg * 100:0.#}¢ + PM US {PSide.ToUpper()} {PAvg * 100:0.#}¢";
     public string EdgeDisplay => $"{EdgeCents:0.#}¢/ct";
     public string ProfitDisplay => $"${Profit:0.00} on {Contracts:0}";
-    public string AnnualizedDisplay => Annualized is null ? "" : $"{Annualized * 100:0}%/yr";
+    public string AnnualizedDisplay => Annualized is double a ? $"{Returns.Yearly(a)}/yr" : "";
+    public string ReturnDisplay => $"Return {Roi * 100:0.##}%" + (Annualized is double y ? $" · ~{Returns.Yearly(y)}/yr" : "");
     public string SeenDisplay => $"since {Fmt.Ago(FirstSeen)}";
     public string KalshiLeg => $"Buy {Contracts:0} {KSide.ToUpper()} @ {KAvg * 100:0.##}¢ avg · cost ${KCost:0.00} · fee ${KFee:0.00}";
     public string PmusLeg => $"Buy {Contracts:0} {PSide.ToUpper()} @ {PAvg * 100:0.##}¢ avg · cost ${PCost:0.00} · fee ${PFee:0.00}";
@@ -272,4 +281,15 @@ public class CandidateCount
     public int Matching { get; set; }
     public int Total { get; set; }
     public Dictionary<string, int> ByRating { get; set; } = new();
+}
+
+public static class Returns
+{
+    /// <summary>Yearly return as a readable %; huge values from same-day markets are capped so they don't look like typos.</summary>
+    public static string Yearly(double annualized) => annualized switch
+    {
+        >= 100 => ">10,000%",
+        >= 10 => $"{annualized * 100:N0}%",
+        _ => $"{annualized * 100:0.#}%",
+    };
 }

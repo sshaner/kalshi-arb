@@ -45,8 +45,8 @@ public class ApiClient(Credentials creds)
 
     public Task<ServerStatus> Status() => Send<ServerStatus>(HttpMethod.Get, "/api/status");
 
-    public Task<List<Opportunity>> Opportunities(bool active = true) =>
-        Send<List<Opportunity>>(HttpMethod.Get, $"/api/opportunities?active={(active ? "true" : "false")}");
+    public Task<List<Opportunity>> Opportunities(bool active = true, string sort = "rating", int limit = 100) =>
+        Send<List<Opportunity>>(HttpMethod.Get, $"/api/opportunities?active={(active ? "true" : "false")}&sort={sort}&limit={limit}");
 
     public Task<Opportunity> Opportunity(long id) => Send<Opportunity>(HttpMethod.Get, $"/api/opportunities/{id}");
 

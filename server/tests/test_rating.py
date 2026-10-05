@@ -47,3 +47,27 @@ def test_slow_low_return_opportunity_is_downgraded():
     slow = rating.rate_opportunity({"edge_cents": 3, "profit": 10, "annualized": 0.04,
                                     "closes_at": "2027-06-01T00:00:00Z"}, PERFECT, 100)
     assert fast["rating"] == 10 and slow["rating"] < fast["rating"]
+
+
+def test_returns_math():
+    # 3¢ net on a pair that costs 97¢ incl. fees = 3.09% return
+    roi, ann = rating.returns(3.0, None)
+    assert abs(roi - 3 / 97) < 1e-4 and ann is None
+    assert rating.returns(-1.0, None) == (None, None)
+    assert rating.returns(None, None) == (None, None)
+
+
+def test_returns_annualize_by_days_left():
+    from datetime import datetime, timedelta, timezone
+    soon = (datetime.now(timezone.utc) + timedelta(days=10)).isoformat()
+    later = (datetime.now(timezone.utc) + timedelta(days=200)).isoformat()
+    _, fast = rating.returns(2.0, soon)
+    _, slow = rating.returns(2.0, later)
+    assert fast > slow * 15  # same 2% is worth ~20x more per year when it settles in 10 days
+
+
+def test_candidate_carries_returns():
+    k = {**BASE, "title": "Over 44.5 points", "yes_ask": 0.44, "no_ask": 0.58}
+    p = {**BASE, "event_title": "KC vs. LV", "title": "Over 44.5 total points", "yes_ask": 0.58, "no_ask": 0.50}
+    r = rating.rate_candidate(k, p, 100, False)
+    assert r["roi"] > 0.025 and "annualized" in r

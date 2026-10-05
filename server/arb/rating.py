@@ -98,9 +98,25 @@ def rate_candidate(k: dict, p: dict, score: float, inverted: bool) -> dict:
     conf, reasons = confidence(d, score, cost)
     money, why = money_from_net(net)
     out = _finish(conf, money, reasons + [why])
-    out.update(net_cents=net, kind=(d.get("prop_kind") or ["outcome"])[0],
-               closes_at=min(filter(None, [k.get("close_time"), p.get("close_time")]), default=None))
+    closes_at = min(filter(None, [k.get("close_time"), p.get("close_time")]), default=None)
+    roi, annualized = returns(net, closes_at)
+    out.update(net_cents=net, kind=(d.get("prop_kind") or ["outcome"])[0], closes_at=closes_at,
+               roi=roi, annualized=annualized)
     return out
+
+
+def returns(net_cents: float | None, closes_at: str | None) -> tuple[float | None, float | None]:
+    """Return per dollar spent and its yearly equivalent, for one hedged pair at top of book.
+
+    A pair pays $1 and costs (100 - net)¢ including fees, so ROI = net / (100 - net).
+    Only meaningful when net > 0; otherwise there's no return to rank.
+    """
+    if net_cents is None or net_cents <= 0:
+        return None, None
+    roi = net_cents / (100 - net_cents)
+    days = arb_engine.days_until(closes_at) if closes_at else None
+    annualized = roi * 365 / max(days, 1.0) if days is not None else None
+    return round(roi, 5), round(annualized, 4) if annualized is not None else None
 
 
 def rate_opportunity(opp: dict, d: dict | None, score: float | None) -> dict:

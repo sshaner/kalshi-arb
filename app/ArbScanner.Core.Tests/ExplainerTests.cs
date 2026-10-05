@@ -176,3 +176,24 @@ public class RatingAndFilterTests
         Assert.Equal("", new ReviewFilter().ToQuery());
     }
 }
+
+public class ReturnTests
+{
+    [Fact]
+    public void Yearly_is_readable_and_capped()
+    {
+        Assert.Equal("12.5%", Returns.Yearly(0.125));
+        Assert.Equal("1,850%", Returns.Yearly(18.5));
+        Assert.Equal(">10,000%", Returns.Yearly(250));
+    }
+
+    [Fact]
+    public void Candidate_return_display()
+    {
+        var c = new Candidate { Roi = 0.0309, Annualized = 1.13 };
+        Assert.Equal("Return 3.09% · ~113%/yr", c.ReturnDisplay);
+        Assert.True(c.HasReturn);
+        Assert.False(new Candidate().HasReturn);
+        Assert.True(new ReviewFilter { Sort = "annualized" }.SortsByReturn);
+    }
+}

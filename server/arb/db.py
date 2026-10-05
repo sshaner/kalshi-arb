@@ -106,7 +106,8 @@ class Db:
     # Columns added after the first deploy; CREATE TABLE IF NOT EXISTS won't add them to an existing DB.
     MIGRATIONS = {
         "candidates": {"rating": "INTEGER", "rating_label": "TEXT", "confidence": "REAL", "net_cents": "REAL",
-                       "kind": "TEXT", "closes_at": "TEXT", "rating_reasons": "TEXT"},
+                       "kind": "TEXT", "closes_at": "TEXT", "rating_reasons": "TEXT",
+                       "roi": "REAL", "annualized": "REAL"},
     }
 
     def _migrate(self) -> None:
@@ -196,7 +197,8 @@ class Db:
     def update_ratings(self, rows: list[dict]) -> None:
         self._tx(lambda c: c.executemany(
             """UPDATE candidates SET rating = :rating, rating_label = :rating_label, confidence = :confidence,
-               net_cents = :net_cents, kind = :kind, closes_at = :closes_at, rating_reasons = :rating_reasons
+               net_cents = :net_cents, kind = :kind, closes_at = :closes_at, rating_reasons = :rating_reasons,
+               roi = :roi, annualized = :annualized
                WHERE id = :id""", rows))
 
     def known_candidate_keys(self) -> set[tuple[str, str]]:

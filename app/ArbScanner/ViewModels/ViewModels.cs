@@ -62,9 +62,53 @@ public partial class SetupViewModel(ApiClient api, Credentials creds, PushRegist
 }
 
 // ---------------------------------------------------------------------------------------------
+public record BestReturn(string Title, string Detail, string Badge, long? OpportunityId);
+
 public partial class DashboardViewModel(ApiClient api) : BaseViewModel
 {
     [ObservableProperty] ServerStatus? status;
+    public ObservableCollection<BestReturn> BestReturns { get; } = new();
+    [ObservableProperty] string bestReturnsCaption = "";
+
+    /// <summary>Top 3 by yearly return: live opportunities if there are any, else review pairs (6+, gap now).</summary>
+    async Task LoadBestReturns()
+    {
+        var items = new List<BestReturn>();
+        var opps = await api.Opportunities(true, "annualized", 3);
+        if (opps.Count > 0)
+        {
+            BestReturnsCaption = "Live opportunities, highest yearly return first. Tap one for the full walkthrough.";
+            items.AddRange(opps.Select(o => new BestReturn(o.Title, $"{o.ReturnDisplay} · ${o.Profit:0.00} on {o.Contracts:0}",
+                o.Rating is int r ? $"{r}/10" : "", o.Id)));
+        }
+        else
+        {
+            BestReturnsCaption = "No live opportunities, so these are review pairs (rated 6+, gap at last-scan prices) with the highest yearly return. Approve the real ones so the scanner watches them.";
+            var f = new ReviewFilter { Sort = "annualized", HasGap = true, MinRating = 6 };
+            var pairs = await api.Candidates(f, 0, 3);
+            items.AddRange(pairs.Select(c => new BestReturn(c.Kalshi?.Display ?? c.KalshiId, c.ReturnDisplay,
+                c.Rating is int r ? $"{r}/10" : "", null)));
+        }
+        BestReturns.Clear();
+        foreach (var i in items) BestReturns.Add(i);
+        if (items.Count == 0) BestReturnsCaption = "Nothing with a positive return right now.";
+    }
+
+    [RelayCommand]
+    async Task OpenBestReturn(BestReturn b)
+    {
+        if (b.OpportunityId is long id)
+            await Shell.Current.GoToAsync($"//opportunities/opportunity?id={id}");
+        else
+            await SeeAllBestReturns();
+    }
+
+    [RelayCommand]
+    async Task SeeAllBestReturns()
+    {
+        App.Services.GetRequiredService<ReviewViewModel>().ShowBestReturns();
+        await Shell.Current.GoToAsync("//review");
+    }
 
     public string ScannerState => Status is null ? "–" : Status.Settings.ScanEnabled ? "Scanning" : "Paused";
     public string LiveOpps => Status is null ? "–" : Status.Counts.LiveOpportunities.ToString();
@@ -97,7 +141,11 @@ public partial class DashboardViewModel(ApiClient api) : BaseViewModel
     partial void OnStatusChanged(ServerStatus? value) => OnPropertyChanged(string.Empty);
 
     [RelayCommand]
-    Task Refresh() => Run(async () => Status = await api.Status());
+    Task Refresh() => Run(async () =>
+    {
+        Status = await api.Status();
+        await LoadBestReturns();
+    });
 
     /// <summary>Background refresh for the auto-poll timer: no spinner, keeps the last good status on error.</summary>
     [RelayCommand]
@@ -123,6 +171,16 @@ public partial class OpportunitiesViewModel(ApiClient api) : BaseViewModel
 {
     public ObservableCollection<Opportunity> Items { get; } = new();
     [ObservableProperty] bool showActive = true;
+    [ObservableProperty] int sortIndex;
+
+    public static IReadOnlyList<(string Value, string Label)> SortOptions { get; } = new[]
+    {
+        ("rating", "Best rating"), ("annualized", "Highest yearly return"), ("roi", "Highest return %"), ("profit", "Most dollars"),
+    };
+
+    public List<string> SortLabels { get; } = SortOptions.Select(o => o.Label).ToList();
+
+    partial void OnSortIndexChanged(int value) => RefreshCommand.Execute(null);
     [ObservableProperty] bool isEmpty;
 
     partial void OnShowActiveChanged(bool value) => RefreshCommand.Execute(null);
@@ -130,7 +188,7 @@ public partial class OpportunitiesViewModel(ApiClient api) : BaseViewModel
     [RelayCommand]
     Task Refresh() => Run(async () =>
     {
-        var list = await api.Opportunities(ShowActive);
+        var list = await api.Opportunities(ShowActive, SortOptions[Math.Clamp(SortIndex, 0, SortOptions.Count - 1)].Value);
         var s = await api.SettingsCached();
         Items.Clear();
         foreach (var o in list)
@@ -217,6 +275,7 @@ public partial class ReviewViewModel : BaseViewModel
     [ObservableProperty] string showingText = "";
 
     public string FiltersButtonText => Filter.ActiveCount == 0 ? "Filters" : $"Filters ({Filter.ActiveCount})";
+    public string QuickReturnText => (Filter.SortsByReturn ? "✓ " : "") + "Best return";
     public string QuickTopText => (Filter.MinRating >= 8 ? "✓ " : "") + "Rated 8+";
     public string QuickGapText => (Filter.HasGap ? "✓ " : "") + "Gap now";
     public string QuickSoonText => (Filter.ClosesWithinDays is <= 1 ? "✓ " : "") + "Closes ≤24h";
@@ -237,6 +296,7 @@ public partial class ReviewViewModel : BaseViewModel
         Preferences.Default.Set(FilterKey, System.Text.Json.JsonSerializer.Serialize(f));
         OnPropertyChanged(nameof(FiltersButtonText));
         OnPropertyChanged(nameof(QuickTopText));
+        OnPropertyChanged(nameof(QuickReturnText));
         OnPropertyChanged(nameof(QuickGapText));
         OnPropertyChanged(nameof(QuickSoonText));
         RefreshCommand.Execute(null);
@@ -264,6 +324,32 @@ public partial class ReviewViewModel : BaseViewModel
 
     [RelayCommand]
     void ToggleTop() => Apply(With(f => f.MinRating = f.MinRating >= 8 ? 1 : 8));
+
+    /// <summary>Highest yearly return first, limited to trustworthy pairs (6+) that have a real gap now.</summary>
+    [RelayCommand]
+    void ToggleReturn() => Apply(With(f =>
+    {
+        if (f.SortsByReturn)
+        {
+            f.Sort = "rating";
+            f.HasGap = false;
+            if (f.MinRating == 6) f.MinRating = 1;
+        }
+        else
+        {
+            f.Sort = "annualized";
+            f.HasGap = true;
+            f.MinRating = Math.Max(f.MinRating, 6);
+        }
+    }));
+
+    /// <summary>Used by the Dashboard's "see all" link.</summary>
+    public void ShowBestReturns() => Apply(With(f =>
+    {
+        f.Sort = "annualized";
+        f.HasGap = true;
+        f.MinRating = Math.Max(f.MinRating, 6);
+    }));
 
     [RelayCommand]
     void ToggleGap() => Apply(With(f => f.HasGap = !f.HasGap));

@@ -93,12 +93,19 @@ def create_app(db, scanner, pusher) -> FastAPI:
                 "settings": db.settings()}
 
     # -- opportunities -------------------------------------------------------
+    OPP_SORTS = {
+        "rating": lambda v: -(v.get("rating") or 0),
+        "profit": lambda v: -(v.get("profit") or 0),
+        "roi": lambda v: -(v.get("roi") or 0),
+        "annualized": lambda v: -(v.get("annualized") or 0),
+    }
+
     @app.get("/api/opportunities")
-    def opportunities(active: bool = True, limit: int = 100) -> list[dict]:
+    def opportunities(active: bool = True, limit: int = 100, sort: str = "rating") -> list[dict]:
         rows = db.q("SELECT * FROM opportunities WHERE active = ? ORDER BY "
                     + ("profit DESC" if active else "last_seen DESC") + " LIMIT ?", (int(active), limit))
         views = [opp_view(o) for o in rows]
-        return sorted(views, key=lambda v: -v["rating"]) if active else views
+        return sorted(views, key=OPP_SORTS.get(sort, OPP_SORTS["rating"])) if active else views
 
     @app.get("/api/opportunities/{opp_id}")
     def opportunity(opp_id: int) -> dict:
@@ -113,6 +120,8 @@ def create_app(db, scanner, pusher) -> FastAPI:
         "gap": "c.net_cents IS NULL, c.net_cents DESC, c.rating DESC",
         "closing": "c.closes_at IS NULL, c.closes_at ASC, c.rating DESC",
         "score": "c.score DESC, c.rating DESC",
+        "roi": "c.roi IS NULL, c.roi DESC, c.rating DESC",
+        "annualized": "c.annualized IS NULL, c.annualized DESC, c.roi DESC",
     }
 
     def candidate_filter(status: str, min_rating: int, kind: str, orientation: str, has_gap: bool,

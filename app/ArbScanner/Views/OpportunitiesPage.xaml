@@ -14,11 +14,13 @@
     </ContentPage.ToolbarItems>
     <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="16,8,16,0" RowSpacing="8">
         <controls:HelpCard ScreenKey="opportunities" />
-        <HorizontalStackLayout Grid.Row="1" Spacing="10">
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
             <Label Text="Live only" VerticalOptions="Center" Style="{StaticResource Muted}" />
-            <Switch IsToggled="{Binding ShowActive}" />
-            <controls:InfoButton Term="edge" />
-        </HorizontalStackLayout>
+            <Switch Grid.Column="1" IsToggled="{Binding ShowActive}" />
+            <Picker Grid.Column="2" Title="Sort" ItemsSource="{Binding SortLabels}" SelectedIndex="{Binding SortIndex}"
+                    TextColor="{StaticResource Text}" BackgroundColor="{StaticResource SurfaceAlt}" />
+            <controls:InfoButton Grid.Column="3" Term="best-return" />
+        </Grid>
         <Label Grid.Row="2" Text="{Binding Error}" Style="{StaticResource Error}" />
         <RefreshView Grid.Row="3" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
             <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
@@ -43,7 +45,7 @@
                                 <Label Grid.Column="1" Text="{Binding EdgeDisplay}" Style="{StaticResource H2}" TextColor="{StaticResource Accent}" />
                                 <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Legs}" Style="{StaticResource Muted}" />
                                 <Label Grid.Row="2" Text="{Binding ProfitDisplay}" />
-                                <Label Grid.Row="2" Grid.Column="1" Text="{Binding AnnualizedDisplay}" Style="{StaticResource Muted}" />
+                                <Label Grid.Row="2" Grid.Column="1" Text="{Binding ReturnDisplay}" TextColor="{StaticResource Accent}" />
                                 <controls:HintLabel Grid.Row="3" Grid.ColumnSpan="2"
                                                     Text="{Binding Explanation.Summary, StringFormat='{0} Tap for the step-by-step walkthrough.'}" />
                             </Grid>

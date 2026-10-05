@@ -103,6 +103,10 @@ public static class Explainer
             var (ks, ps, cost, fees) = combo.Value;
             var net = 1 - cost - fees;
             gapLines.Add($"Cheapest hedge now: Kalshi {Side(ks)} + Polymarket {Side(ps)} = {C(cost)} before fees, about {C(fees)} in fees → {(net >= 0 ? "about " + C(net) + " profit" : "a loss of about " + C(-net))} per pair.");
+            if (c.Roi is double roi)
+                gapLines.Add($"Return: {roi * 100:0.##}% on the money spent" + (c.Annualized is double a
+                    ? $", about {Returns.Yearly(a)} per year given when it settles. Compare deals by this yearly number: a quick small return can beat a slow bigger one."
+                    : "."));
             if (cost < 0.9)
             {
                 gapLines.Add($"A gap this large ({C(1 - cost)}) almost never happens for truly identical markets. It usually means the two questions differ (team, line, period or rules). Be extra careful.");

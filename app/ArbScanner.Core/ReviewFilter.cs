@@ -27,7 +27,13 @@ public class ReviewFilter
         new (double?, string)[] { (null, "Any time"), (1, "Within 24 hours"), (7, "Within 7 days"), (30, "Within 30 days") };
 
     public static readonly IReadOnlyList<(string Value, string Label)> Sorts =
-        new[] { ("rating", "Best rating first"), ("gap", "Biggest gap first"), ("closing", "Closing soonest"), ("score", "Best name match") };
+        new[]
+        {
+            ("rating", "Best rating first"), ("annualized", "Highest yearly return"), ("roi", "Highest return %"),
+            ("gap", "Biggest gap (¢ per contract)"), ("closing", "Closing soonest"), ("score", "Best name match"),
+        };
+
+    public bool SortsByReturn => Sort is "roi" or "annualized";
 
     public ReviewFilter Clone() => (ReviewFilter)MemberwiseClone();
 

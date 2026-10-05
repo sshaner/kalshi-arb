@@ -116,3 +116,14 @@ def test_candidate_filters_and_count(client):
     assert ids(sort="rating")[0] == "K2"
     n = c.get("/api/candidates/count", params={"min_rating": 8}, headers=AUTH).json()
     assert n["matching"] == 1 and n["total"] == 3 and n["by_rating"]["9"] == 1
+
+
+def test_sort_by_return(client):
+    c, db = client
+    db.add_candidates([("K2", "P2", 99.0, 0.97, False), ("K3", "P3", 99.0, 0.98, False)])
+    db.x("UPDATE candidates SET roi = 0.01, annualized = 2.0 WHERE kalshi_id = 'K2'")
+    db.x("UPDATE candidates SET roi = 0.03, annualized = 0.5 WHERE kalshi_id = 'K3'")
+    first = lambda s: c.get("/api/candidates", params={"sort": s}, headers=AUTH).json()[0]["kalshi_id"]
+    assert first("roi") == "K3"
+    assert first("annualized") == "K2"
+    assert c.get("/api/opportunities", params={"sort": "annualized"}, headers=AUTH).status_code == 200

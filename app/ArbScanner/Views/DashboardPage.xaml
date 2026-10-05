@@ -71,6 +71,35 @@
                 </Grid>
 
                 <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="8">
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <Label Text="Best returns right now" Style="{StaticResource H2}" VerticalOptions="Center" />
+                            <controls:InfoButton Grid.Column="1" Term="best-return" />
+                            <Button Grid.Column="2" Text="See all" Padding="10,4" FontSize="13" Command="{Binding SeeAllBestReturnsCommand}" />
+                        </Grid>
+                        <Label Text="{Binding BestReturnsCaption}" Style="{StaticResource Muted}" />
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding BestReturns}" Spacing="6">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:BestReturn">
+                                    <Border BackgroundColor="{StaticResource SurfaceAlt}" StrokeThickness="0" Padding="10,8"
+                                            StrokeShape="RoundRectangle 10">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding OpenBestReturnCommand, Source={RelativeSource AncestorType={x:Type vm:DashboardViewModel}}, x:DataType=vm:DashboardViewModel}"
+                                                                  CommandParameter="{Binding .}" />
+                                        </Border.GestureRecognizers>
+                                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                            <Label Text="{Binding Title}" LineBreakMode="TailTruncation" MaxLines="1" />
+                                            <Label Grid.Column="1" Text="{Binding Badge}" TextColor="{StaticResource Accent}" FontAttributes="Bold" Margin="8,0,0,0" />
+                                            <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Detail}" Style="{StaticResource Muted}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource Card}">
                     <VerticalStackLayout Spacing="4">
                         <HorizontalStackLayout>
                             <Label Text="Paper trading" Style="{StaticResource H2}" VerticalOptions="Center" />

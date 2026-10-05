@@ -23,6 +23,7 @@
         <!-- Quick filters + full filter sheet -->
         <ScrollView Grid.Row="2" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
             <HorizontalStackLayout Spacing="6">
+                <Button Text="{Binding QuickReturnText}" Command="{Binding ToggleReturnCommand}" Padding="12,6" FontSize="13" />
                 <Button Text="{Binding QuickTopText}" Command="{Binding ToggleTopCommand}" Padding="12,6" FontSize="13" />
                 <Button Text="{Binding QuickGapText}" Command="{Binding ToggleGapCommand}" Padding="12,6" FontSize="13" />
                 <Button Text="{Binding QuickSoonText}" Command="{Binding ToggleSoonCommand}" Padding="12,6" FontSize="13" />
@@ -58,6 +59,8 @@
                                     <Label Grid.Column="2" Text="{Binding ScoreDisplay}" Style="{StaticResource Muted}"
                                            VerticalOptions="Center" Margin="8,0,0,0" />
                                 </Grid>
+                                <Label Text="{Binding ReturnDisplay}" FontAttributes="Bold" TextColor="{StaticResource Accent}"
+                                       IsVisible="{Binding HasReturn}" />
                                 <VerticalStackLayout Spacing="2" IsVisible="{Binding IsOn, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}">
                                     <Label Text="{Binding Suggestion}" TextColor="{StaticResource Accent}" FontAttributes="Bold" />
                                     <Label Text="{Binding Explanation.Summary}" Style="{StaticResource Muted}" />
