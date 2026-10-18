@@ -45,8 +45,13 @@ public class ApiClient(Credentials creds)
 
     public Task<ServerStatus> Status() => Send<ServerStatus>(HttpMethod.Get, "/api/status");
 
-    public Task<List<Opportunity>> Opportunities(bool active = true, string sort = "rating", int limit = 100) =>
-        Send<List<Opportunity>>(HttpMethod.Get, $"/api/opportunities?active={(active ? "true" : "false")}&sort={sort}&limit={limit}");
+    public Task<List<Opportunity>> Opportunities(bool active = true, string sort = "rating", int limit = 100, string category = "") =>
+        Send<List<Opportunity>>(HttpMethod.Get,
+            $"/api/opportunities?active={(active ? "true" : "false")}&sort={sort}&limit={limit}{CategoryParam(category)}");
+
+    public Task<List<CategoryInfo>> Categories() => Send<List<CategoryInfo>>(HttpMethod.Get, "/api/categories");
+
+    static string CategoryParam(string category) => category.Length > 0 ? $"&category={Uri.EscapeDataString(category)}" : "";
 
     public Task<Opportunity> Opportunity(long id) => Send<Opportunity>(HttpMethod.Get, $"/api/opportunities/{id}");
 
@@ -67,7 +72,7 @@ public class ApiClient(Credentials creds)
 
     public Task<JsonElement> RunDiscovery() => Send<JsonElement>(HttpMethod.Post, "/api/discovery/run");
 
-    public Task<List<Pair>> Pairs() => Send<List<Pair>>(HttpMethod.Get, "/api/pairs");
+    public Task<List<Pair>> Pairs(string category = "") => Send<List<Pair>>(HttpMethod.Get, $"/api/pairs?status=active{CategoryParam(category)}");
 
     public Task<Pair> UpdatePair(long id, bool? paused = null, bool? inverted = null, string? notes = null) =>
         Send<Pair>(HttpMethod.Patch, $"/api/pairs/{id}", new { paused, inverted, notes });

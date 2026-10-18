@@ -12,7 +12,7 @@
         <ToolbarItem Text="{Binding ToggleText, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}"
                      Command="{Binding ToggleCommand, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}" />
     </ContentPage.ToolbarItems>
-    <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="16,8,16,0" RowSpacing="8">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Padding="16,8,16,0" RowSpacing="8">
         <controls:HelpCard ScreenKey="opportunities" />
         <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
             <Label Text="Live only" VerticalOptions="Center" Style="{StaticResource Muted}" />
@@ -21,8 +21,10 @@
                     TextColor="{StaticResource Text}" BackgroundColor="{StaticResource SurfaceAlt}" />
             <controls:InfoButton Grid.Column="3" Term="best-return" />
         </Grid>
-        <Label Grid.Row="2" Text="{Binding Error}" Style="{StaticResource Error}" />
-        <RefreshView Grid.Row="3" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
+        <Picker Grid.Row="2" Title="Category" ItemsSource="{Binding Categories.Labels}" SelectedIndex="{Binding Categories.SelectedIndex}"
+                TextColor="{StaticResource Text}" BackgroundColor="{StaticResource SurfaceAlt}" />
+        <Label Grid.Row="3" Text="{Binding Error}" Style="{StaticResource Error}" />
+        <RefreshView Grid.Row="4" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
             <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
                 <CollectionView.EmptyView>
                     <Label Text="No opportunities right now. Approve more pairs in Review to widen the net."

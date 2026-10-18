@@ -58,9 +58,10 @@ public class Pair
     public MarketView? Kalshi { get; set; }
     public MarketView? Pmus { get; set; }
     public MatchDetails? MatchDetails { get; set; }
+    public string Category { get; set; } = "";
 
     public string Title => Kalshi?.Display ?? KalshiId;
-    public string Subtitle => (Inverted ? "Inverted · " : "") + (Paused ? "Paused · " : "") + $"checked {Fmt.Ago(LastChecked)}";
+    public string Subtitle => (Category.Length > 0 ? $"{Category} · " : "") + (Inverted ? "Inverted · " : "") + (Paused ? "Paused · " : "") + $"checked {Fmt.Ago(LastChecked)}";
 }
 
 public class Candidate
@@ -86,6 +87,7 @@ public class Candidate
     /// <summary>Profit per dollar spent at last-scan prices (after fees); null when there's no gap.</summary>
     public double? Roi { get; set; }
     public double? Annualized { get; set; }
+    public string Category { get; set; } = "";
 
     [JsonIgnore] public string ReturnDisplay => Roi is double r
         ? $"Return {r * 100:0.##}%" + (Annualized is double a ? $" · ~{Returns.Yearly(a)}/yr" : "")
@@ -281,6 +283,15 @@ public class CandidateCount
     public int Matching { get; set; }
     public int Total { get; set; }
     public Dictionary<string, int> ByRating { get; set; } = new();
+}
+
+/// <summary>/api/categories row: one market category (Politics first, then A–Z) and how much each screen has in it.</summary>
+public class CategoryInfo
+{
+    public string Name { get; set; } = "";
+    public int Review { get; set; }
+    public int Pairs { get; set; }
+    public int Opportunities { get; set; }
 }
 
 public static class Returns

@@ -16,6 +16,8 @@ public class ReviewFilter
     /// <summary>rating | gap | closing | score</summary>
     public string Sort { get; set; } = "rating";
     public string Query { get; set; } = "";
+    /// <summary>"" = all categories; otherwise a name from /api/categories (Politics, Sports, …)</summary>
+    public string Category { get; set; } = "";
 
     public static readonly IReadOnlyList<(string Value, string Label)> Kinds =
         new[] { ("any", "All bet types"), ("outcome", "Who wins"), ("spread", "Spreads (win by X)"), ("total", "Totals (over/under)") };
@@ -41,6 +43,7 @@ public class ReviewFilter
     public string ToQuery()
     {
         var parts = new List<string>();
+        if (Category.Length > 0) parts.Add($"category={Uri.EscapeDataString(Category)}");
         if (MinRating > 1) parts.Add($"min_rating={MinRating}");
         if (Kind != "any") parts.Add($"kind={Kind}");
         if (Orientation != "any") parts.Add($"orientation={Orientation}");
@@ -50,7 +53,7 @@ public class ReviewFilter
         return string.Join("&", parts);
     }
 
-    /// <summary>Number of filters narrowing the list (search and sort excluded).</summary>
+    /// <summary>Number of filter-sheet filters narrowing the list (search, category and sort have their own controls).</summary>
     public int ActiveCount =>
         (MinRating > 1 ? 1 : 0) + (Kind != "any" ? 1 : 0) + (Orientation != "any" ? 1 : 0) + (HasGap ? 1 : 0) +
         (ClosesWithinDays is null ? 0 : 1);
@@ -58,6 +61,7 @@ public class ReviewFilter
     public string Describe()
     {
         var bits = new List<string>();
+        if (Category.Length > 0) bits.Add(Category);
         if (MinRating > 1) bits.Add($"rating {MinRating}+");
         if (Kind != "any") bits.Add(Kinds.First(k => k.Value == Kind).Label.ToLowerInvariant());
         if (Orientation != "any") bits.Add(Orientation == "same" ? "Same only" : "Inverse only");

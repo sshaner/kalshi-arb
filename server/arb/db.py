@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS markets (
     yes_ask REAL,
     no_ask REAL,
     fee_multiplier REAL DEFAULT 1,
+    category TEXT DEFAULT '',
     open INTEGER DEFAULT 1,
     updated_at REAL,
     PRIMARY KEY (venue, market_id)
@@ -105,6 +106,7 @@ class Db:
 
     # Columns added after the first deploy; CREATE TABLE IF NOT EXISTS won't add them to an existing DB.
     MIGRATIONS = {
+        "markets": {"category": "TEXT DEFAULT ''"},
         "candidates": {"rating": "INTEGER", "rating_label": "TEXT", "confidence": "REAL", "net_cents": "REAL",
                        "kind": "TEXT", "closes_at": "TEXT", "rating_reasons": "TEXT",
                        "roi": "REAL", "annualized": "REAL"},
@@ -164,17 +166,18 @@ class Db:
         Markets not seen in this pass are marked closed at the end, so readers never see a half-updated state."""
         now = time.time()
         rows = [(m.venue, m.market_id, m.event_title, m.title, m.alt_title, int(m.flipped), m.close_time, m.event_time,
-                 m.url, m.rules, m.yes_ask, m.no_ask, m.fee_multiplier, now) for m in markets]
+                 m.url, m.rules, m.yes_ask, m.no_ask, m.fee_multiplier, m.category, now) for m in markets]
         for i in range(0, len(rows), self.UPSERT_CHUNK):
             self._tx(lambda c, chunk=rows[i:i + self.UPSERT_CHUNK]: c.executemany(
                 """INSERT INTO markets (venue, market_id, event_title, title, alt_title, flipped, close_time,
-                                        event_time, url, rules, yes_ask, no_ask, fee_multiplier, open, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+                                        event_time, url, rules, yes_ask, no_ask, fee_multiplier, category, open,
+                                        updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
                    ON CONFLICT(venue, market_id) DO UPDATE SET
                      event_title=excluded.event_title, title=excluded.title, alt_title=excluded.alt_title,
                      flipped=excluded.flipped, close_time=excluded.close_time, event_time=excluded.event_time,
                      url=excluded.url, rules=excluded.rules, yes_ask=excluded.yes_ask, no_ask=excluded.no_ask,
-                     fee_multiplier=excluded.fee_multiplier, open=1, updated_at=excluded.updated_at""", chunk))
+                     fee_multiplier=excluded.fee_multiplier, category=excluded.category, open=1, updated_at=excluded.updated_at""", chunk))
         self.x("UPDATE markets SET open = 0 WHERE venue = ? AND open = 1 AND updated_at < ?", (venue, now))
 
     def _tx(self, work) -> None:

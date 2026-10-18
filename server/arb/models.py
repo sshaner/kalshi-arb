@@ -42,6 +42,7 @@ class VenueMarket:
     status: str = "open"
     alt_title: str = ""     # outcome the NO side refers to, when it's a named entity (Polymarket US head-to-head)
     flipped: bool = False   # YES is the *negation* of `title` (Polymarket US "+line" spread markets)
+    category: str = ""      # app category (arb/categories.py), "" when the venue gave none
 
     @property
     def match_text(self) -> str:

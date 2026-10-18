@@ -33,6 +33,7 @@ def test_kalshi_event_parse():
     assert ms and ms[0].venue == "kalshi"
     assert ms[0].fee_multiplier == 0.5
     assert ms[0].event_title == ev["title"]
+    assert ms[0].category == "World"
 
 
 def test_pmus_event_parse():
@@ -41,6 +42,18 @@ def test_pmus_event_parse():
     assert ms and ms[0].venue == "pmus"
     assert ms[0].url.endswith(ev["slug"])
     assert ms[0].event_title == "National League Champion"
+    assert ms[0].category == "Sports"
+
+
+def test_category_normalize_and_order():
+    from arb import categories
+    assert categories.normalize("Elections") == categories.normalize("politics") == "Politics"
+    assert categories.normalize("Climate and Weather") == "Weather"
+    assert categories.normalize("macro") == categories.normalize("Economics") == "Economics"
+    assert categories.normalize("Brand New Thing") == "Brand New Thing"
+    assert categories.normalize("") == categories.normalize(None) == ""
+    names = ["Sports", "Other", "Crypto", "Politics", "World"]
+    assert sorted(names, key=categories.sort_key) == ["Politics", "Crypto", "Sports", "World", "Other"]
 
 
 def test_matcher_finds_same_event():

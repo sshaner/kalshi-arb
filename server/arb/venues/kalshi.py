@@ -4,7 +4,7 @@ import logging
 
 import httpx
 
-from .. import config
+from .. import categories, config
 from ..models import KALSHI, Book, Level, VenueMarket
 from .http import RateLimiter, get_json
 
@@ -87,6 +87,7 @@ def _f(v) -> float | None:
 def parse_event(ev: dict, mults: dict[str, float]) -> list[VenueMarket]:
     out = []
     series = ev.get("series_ticker", "")
+    category = categories.normalize(ev.get("category"))
     for m in ev.get("markets") or []:
         if m.get("mve_collection_ticker") or m.get("market_type", "binary") != "binary":
             continue
@@ -104,6 +105,7 @@ def parse_event(ev: dict, mults: dict[str, float]) -> list[VenueMarket]:
             yes_ask=_f(m.get("yes_ask_dollars")),
             no_ask=_f(m.get("no_ask_dollars")),
             fee_multiplier=mults.get(series, 1.0),
+            category=category,
         ))
     return out
 

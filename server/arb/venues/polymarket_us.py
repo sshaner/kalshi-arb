@@ -6,7 +6,7 @@ import re
 
 import httpx
 
-from .. import config
+from .. import categories, config
 from ..models import PMUS, Book, Level, VenueMarket
 from .http import RateLimiter, get_json
 
@@ -84,6 +84,7 @@ def _px(q) -> float | None:
 
 def parse_event(ev: dict) -> list[VenueMarket]:
     out = []
+    category = categories.normalize(ev.get("category"))
     for m in ev.get("markets") or []:
         if not m.get("active") or m.get("closed") or m.get("archived") or m.get("hidden"):
             continue
@@ -122,6 +123,7 @@ def parse_event(ev: dict) -> list[VenueMarket]:
             # Spread markets: the title names the "-line" team ("USC wins by over 5.5"), but when the long/YES
             # side is the "+line" team (Washington +5.5), YES is the negation of the title.
             flipped=(long_side.get("description") or "").strip().startswith("+"),
+            category=category,
         ))
     return out
 

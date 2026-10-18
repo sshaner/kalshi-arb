@@ -30,6 +30,51 @@ public partial class BaseViewModel : ObservableObject
 }
 
 // ---------------------------------------------------------------------------------------------
+/// <summary>Category picker state: "All categories" then the server's list (Politics first, then A–Z) with counts.</summary>
+public partial class CategoryChoice(Func<CategoryInfo, int> count) : ObservableObject
+{
+    const string All = "All categories";
+    List<string> _names = new() { "" };
+    bool _loading;
+
+    [ObservableProperty] List<string> labels = new() { All };
+    [ObservableProperty] int selectedIndex;
+
+    /// <summary>Fired when the user picks a different category.</summary>
+    public event Action<string>? Changed;
+
+    public string Selected => SelectedIndex > 0 && SelectedIndex < _names.Count ? _names[SelectedIndex] : "";
+
+    partial void OnSelectedIndexChanged(int value)
+    {
+        if (!_loading && value >= 0) Changed?.Invoke(Selected);
+    }
+
+    /// <summary>Refresh the list and counts, keeping <paramref name="selected"/> picked. Failures keep the old list.</summary>
+    public async Task Load(ApiClient api, string selected)
+    {
+        List<CategoryInfo> list;
+        try { list = await api.Categories(); }
+        catch { return; }
+        var names = new List<string> { "" };
+        names.AddRange(list.Select(c => c.Name));
+        if (selected.Length > 0 && !names.Contains(selected)) names.Add(selected);
+        var newLabels = names.Select(n => n.Length == 0 ? All
+            : list.FirstOrDefault(c => c.Name == n) is { } c ? $"{n} ({count(c):N0})" : n).ToList();
+        if (newLabels.SequenceEqual(Labels) && Selected == selected) return;
+        _loading = true;
+        try
+        {
+            _names = names;
+            Labels = newLabels;
+            SelectedIndex = -1; // the Picker may have cleared its selection when the items changed
+            SelectedIndex = names.IndexOf(selected);
+        }
+        finally { _loading = false; }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
 public partial class SetupViewModel(ApiClient api, Credentials creds, PushRegistration push) : BaseViewModel
 {
     [ObservableProperty] string url = Credentials.DefaultUrl;
@@ -167,8 +212,24 @@ public partial class DashboardViewModel(ApiClient api) : BaseViewModel
 }
 
 // ---------------------------------------------------------------------------------------------
-public partial class OpportunitiesViewModel(ApiClient api) : BaseViewModel
+public partial class OpportunitiesViewModel : BaseViewModel
 {
+    const string CategoryKey = "opportunities_category";
+    readonly ApiClient api;
+    string _category = Preferences.Default.Get(CategoryKey, "");
+
+    public OpportunitiesViewModel(ApiClient api)
+    {
+        this.api = api;
+        Categories.Changed += c =>
+        {
+            _category = c;
+            Preferences.Default.Set(CategoryKey, c);
+            RefreshCommand.Execute(null);
+        };
+    }
+
+    public CategoryChoice Categories { get; } = new(c => c.Opportunities);
     public ObservableCollection<Opportunity> Items { get; } = new();
     [ObservableProperty] bool showActive = true;
     [ObservableProperty] int sortIndex;
@@ -188,8 +249,11 @@ public partial class OpportunitiesViewModel(ApiClient api) : BaseViewModel
     [RelayCommand]
     Task Refresh() => Run(async () =>
     {
-        var list = await api.Opportunities(ShowActive, SortOptions[Math.Clamp(SortIndex, 0, SortOptions.Count - 1)].Value);
+        var cats = Categories.Load(api, _category);
+        var list = await api.Opportunities(ShowActive, SortOptions[Math.Clamp(SortIndex, 0, SortOptions.Count - 1)].Value,
+            category: _category);
         var s = await api.SettingsCached();
+        await cats;
         Items.Clear();
         foreach (var o in list)
         {
@@ -266,8 +330,10 @@ public partial class ReviewViewModel : BaseViewModel
         this.api = api;
         filter = LoadFilter();
         searchText = filter.Query;
+        Categories.Changed += c => Apply(With(f => f.Category = c));
     }
 
+    public CategoryChoice Categories { get; } = new(c => c.Review);
     public ObservableCollection<Candidate> Items { get; } = new();
     [ObservableProperty] bool isEmpty;
     [ObservableProperty] ReviewFilter filter;
@@ -368,6 +434,7 @@ public partial class ReviewViewModel : BaseViewModel
     Task Refresh() => Run(async () =>
     {
         var countTask = api.CandidateCount(Filter);
+        var cats = Categories.Load(api, Filter.Category);
         var list = await api.Candidates(Filter, 0, PageSize);
         var s = await api.SettingsCached();
         Items.Clear();
@@ -375,7 +442,8 @@ public partial class ReviewViewModel : BaseViewModel
         _offset = list.Count;
         _hasMore = list.Count == PageSize;
         var count = await countTask;
-        ShowingText = Filter.ActiveCount == 0 && string.IsNullOrWhiteSpace(Filter.Query)
+        await cats;
+        ShowingText = Filter.ActiveCount == 0 && string.IsNullOrWhiteSpace(Filter.Query) && Filter.Category.Length == 0
             ? $"{count.Total:N0} pairs to review"
             : $"{count.Matching:N0} of {count.Total:N0} pairs · {Filter.Describe()}";
         IsEmpty = Items.Count == 0;
@@ -451,15 +519,33 @@ public partial class ReviewViewModel : BaseViewModel
 }
 
 // ---------------------------------------------------------------------------------------------
-public partial class PairsViewModel(ApiClient api) : BaseViewModel
+public partial class PairsViewModel : BaseViewModel
 {
+    const string CategoryKey = "pairs_category";
+    readonly ApiClient api;
+    string _category = Preferences.Default.Get(CategoryKey, "");
+
+    public PairsViewModel(ApiClient api)
+    {
+        this.api = api;
+        Categories.Changed += c =>
+        {
+            _category = c;
+            Preferences.Default.Set(CategoryKey, c);
+            RefreshCommand.Execute(null);
+        };
+    }
+
+    public CategoryChoice Categories { get; } = new(c => c.Pairs);
     public ObservableCollection<Pair> Items { get; } = new();
     [ObservableProperty] bool isEmpty;
 
     [RelayCommand]
     Task Refresh() => Run(async () =>
     {
-        var list = await api.Pairs();
+        var cats = Categories.Load(api, _category);
+        var list = await api.Pairs(_category);
+        await cats;
         Items.Clear();
         foreach (var p in list) Items.Add(p);
         IsEmpty = Items.Count == 0;

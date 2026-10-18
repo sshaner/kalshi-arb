@@ -39,7 +39,7 @@ public class FilterPage : LearningModalPage
         var applyBtn = new Button { Text = "Show results", Style = Theme.Style("Primary") };
         reset.Clicked += async (_, _) =>
         {
-            apply(new ReviewFilter { Query = current.Query });
+            apply(new ReviewFilter { Query = current.Query, Category = current.Category });
             await Navigation.PopModalAsync();
         };
         applyBtn.Clicked += async (_, _) =>

@@ -14,14 +14,17 @@
         <ToolbarItem Text="Pairs" Command="{Binding PairsCommand}" />
         <ToolbarItem Text="Rescan" Command="{Binding DiscoverCommand}" />
     </ContentPage.ToolbarItems>
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*" Padding="16,4,16,0" RowSpacing="6">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*" Padding="16,4,16,0" RowSpacing="6">
         <controls:HelpCard ScreenKey="review" />
 
         <SearchBar Grid.Row="1" Text="{Binding SearchText}" Placeholder="Search team, player or topic"
                    TextColor="{StaticResource Text}" PlaceholderColor="{StaticResource MutedColor}" />
 
+        <Picker Grid.Row="2" Title="Category" ItemsSource="{Binding Categories.Labels}" SelectedIndex="{Binding Categories.SelectedIndex}"
+                TextColor="{StaticResource Text}" BackgroundColor="{StaticResource SurfaceAlt}" />
+
         <!-- Quick filters + full filter sheet -->
-        <ScrollView Grid.Row="2" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+        <ScrollView Grid.Row="3" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
             <HorizontalStackLayout Spacing="6">
                 <Button Text="{Binding QuickReturnText}" Command="{Binding ToggleReturnCommand}" Padding="12,6" FontSize="13" />
                 <Button Text="{Binding QuickTopText}" Command="{Binding ToggleTopCommand}" Padding="12,6" FontSize="13" />
@@ -32,13 +35,13 @@
             </HorizontalStackLayout>
         </ScrollView>
 
-        <Grid Grid.Row="3" ColumnDefinitions="*,Auto">
+        <Grid Grid.Row="4" ColumnDefinitions="*,Auto">
             <Label Text="{Binding ShowingText}" Style="{StaticResource Muted}" VerticalOptions="Center" />
             <controls:InfoButton Grid.Column="1" Term="deal-rating" />
         </Grid>
-        <Label Grid.Row="4" Text="{Binding Error}" Style="{StaticResource Error}" />
+        <Label Grid.Row="5" Text="{Binding Error}" Style="{StaticResource Error}" />
 
-        <RefreshView Grid.Row="5" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
+        <RefreshView Grid.Row="6" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
             <CollectionView ItemsSource="{Binding Items}" SelectionMode="None"
                             RemainingItemsThreshold="8" RemainingItemsThresholdReachedCommand="{Binding LoadMoreCommand}">
                 <CollectionView.EmptyView>

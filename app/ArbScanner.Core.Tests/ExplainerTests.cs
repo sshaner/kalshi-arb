@@ -174,6 +174,11 @@ public class RatingAndFilterTests
         Assert.Equal(4, f.ActiveCount);
         Assert.Equal("rating 8+ · spreads (win by x) · gap now · closing ≤24h", f.Describe());
         Assert.Equal("", new ReviewFilter().ToQuery());
+
+        var f2 = new ReviewFilter { Category = "Science & Tech", MinRating = 8 };
+        Assert.Equal("category=Science%20%26%20Tech&min_rating=8", f2.ToQuery());
+        Assert.Equal(1, f2.ActiveCount);
+        Assert.Equal("Science & Tech · rating 8+", f2.Describe());
     }
 }
 

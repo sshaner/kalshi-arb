@@ -127,3 +127,30 @@ def test_sort_by_return(client):
     assert first("roi") == "K3"
     assert first("annualized") == "K2"
     assert c.get("/api/opportunities", params={"sort": "annualized"}, headers=AUTH).status_code == 200
+
+
+def test_category_filter_and_list(client):
+    c, db = client
+    db.x("INSERT INTO markets (venue, market_id, event_title, title, category, open) "
+         "VALUES ('kalshi', 'K2', 'Senate', 'Dem', 'Politics', 1)")
+    db.x("INSERT INTO markets (venue, market_id, event_title, title, category, open) "
+         "VALUES ('pmus', 'P2', 'Senate', 'Dem', 'Politics', 1)")
+    db.x("INSERT INTO markets (venue, market_id, event_title, title, category, open) "
+         "VALUES ('pmus', 'P3', 'Game', 'Team', 'Sports', 1)")  # Kalshi side has no category -> falls back
+    db.x("INSERT INTO markets (venue, market_id, event_title, title, open) VALUES ('kalshi', 'K3', 'Game', 'Team', 1)")
+    db.add_candidates([("K2", "P2", 99.0, 0.97, False), ("K3", "P3", 99.0, 0.97, False)])
+    ids = lambda cat: [x["kalshi_id"] for x in c.get("/api/candidates", params={"category": cat}, headers=AUTH).json()]
+    assert ids("Politics") == ["K2"]
+    assert ids("Sports") == ["K3"]
+    assert ids("Other") == ["K1"]
+    assert c.get("/api/candidates/count", params={"category": "Politics"}, headers=AUTH).json()["matching"] == 1
+    cats = c.get("/api/categories", headers=AUTH).json()
+    assert [x["name"] for x in cats] == ["Politics", "Sports", "Other"]
+    assert cats[0]["review"] == 1
+
+    cand = db.one("SELECT id FROM candidates WHERE kalshi_id = 'K2'")["id"]
+    c.post(f"/api/candidates/{cand}/approve", json={"inverted": False}, headers=AUTH)
+    assert [p["category"] for p in c.get("/api/pairs", params={"category": "Politics"}, headers=AUTH).json()] == ["Politics"]
+    assert c.get("/api/pairs", params={"category": "Sports"}, headers=AUTH).json() == []
+    assert c.get("/api/opportunities", params={"category": "Politics"}, headers=AUTH).json() == []
+    assert c.get("/api/categories", headers=AUTH).json()[0]["pairs"] == 1

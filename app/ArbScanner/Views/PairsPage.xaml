@@ -12,10 +12,12 @@
         <ToolbarItem Text="{Binding ToggleText, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}"
                      Command="{Binding ToggleCommand, Source={x:Static services:LearningMode.Current}, x:DataType=services:LearningMode}" />
     </ContentPage.ToolbarItems>
-    <Grid RowDefinitions="Auto,Auto,*" Padding="16,8,16,0" RowSpacing="8">
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="16,8,16,0" RowSpacing="8">
         <controls:HelpCard ScreenKey="pairs" />
-        <Label Grid.Row="1" Text="{Binding Error}" Style="{StaticResource Error}" />
-        <RefreshView Grid.Row="2" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
+        <Picker Grid.Row="1" Title="Category" ItemsSource="{Binding Categories.Labels}" SelectedIndex="{Binding Categories.SelectedIndex}"
+                TextColor="{StaticResource Text}" BackgroundColor="{StaticResource SurfaceAlt}" />
+        <Label Grid.Row="2" Text="{Binding Error}" Style="{StaticResource Error}" />
+        <RefreshView Grid.Row="3" IsRefreshing="{Binding IsBusy}" Command="{Binding RefreshCommand}">
             <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
                 <CollectionView.EmptyView>
                     <Label Text="No approved pairs yet." Style="{StaticResource Muted}" HorizontalTextAlignment="Center" Margin="24" />
