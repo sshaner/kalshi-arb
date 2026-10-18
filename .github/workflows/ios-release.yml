@@ -28,28 +28,32 @@ concurrency:
 
 jobs:
   build-and-upload:
-    # macos-26: default Xcode 26.5, required by the net10.0-ios workload
-    runs-on: macos-26
-    timeout-minutes: 60
+    # The user's MacBook (self-hosted runner, label shnr-mac; setup in C:\Dev\MacBook).
+    runs-on: [self-hosted, macOS, ARM64, shnr-mac]
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+
+      # One runner per repo on the same Mac: this Mac-wide lock keeps iOS builds from
+      # different repos from overlapping (they share the keychain search list and Xcode).
+      - name: Wait for the Mac's iOS build lock
+        run: ~/ci/ios-lock.sh acquire
 
       - name: Set up .NET 10
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
 
-      # The newest iOS workload can require an Xcode the runner doesn't have yet (iOS SDK 27.0 needs Xcode 27).
-      # Use Xcode 27 when the image has it; otherwise pin the workloads to the Xcode 26 line.
-      - name: Select Xcode and install MAUI workload
+      # The newest iOS workload can require an Xcode newer than the Mac's (iOS SDK 27.0 needs Xcode 27).
+      # Use the latest workload with Xcode 27+ selected; otherwise pin the workloads to the Xcode 26 line.
+      - name: Install MAUI workload for the selected Xcode
         run: |
-          XC27=$(ls -d /Applications/Xcode_27*.app 2>/dev/null | sort -V | tail -1 || true)
-          if [ -n "$XC27" ]; then
-            echo "Using $XC27"
-            sudo xcode-select -s "$XC27"
+          XC_MAJOR=$(xcodebuild -version | head -1 | awk '{print int($2)}')
+          if [ "$XC_MAJOR" -ge 27 ]; then
+            echo "Using $(xcodebuild -version | head -1)"
             dotnet workload install maui
           else
-            echo "No Xcode 27 on this image ($(xcodebuild -version | head -1)); pinning iOS workload to 26.x"
+            echo "$(xcodebuild -version | head -1) is older than 27; pinning iOS workload to 26.x"
             cat > rollback.json <<'EOF'
           {
             "microsoft.net.sdk.ios": "26.5.10301/10.0.100",
@@ -100,6 +104,7 @@ jobs:
           dotnet publish "$PROJECT" -f net10.0-ios -c Release \
             -p:RuntimeIdentifier=ios-arm64 \
             -p:ArchiveOnBuild=true \
+            -p:ValidateXcodeVersion=false \
             -p:CodesignKey="$CODESIGN_KEY" \
             -p:CodesignProvision="$CODESIGN_PROVISION" \
             $VERSION_ARGS
@@ -122,3 +127,9 @@ jobs:
         with:
           name: ArbScanner-ios
           path: app/ArbScanner/bin/Release/net10.0-ios/**/*.ipa
+
+      # The Mac persists between jobs (hosted runners didn't): delete the signing keychain,
+      # profiles and API key, and release the build lock.
+      - name: Clean up signing material and release lock
+        if: always()
+        run: ~/ci/ios-cleanup.sh
