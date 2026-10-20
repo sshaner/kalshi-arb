@@ -57,6 +57,8 @@ Bulk top-of-book for all active pairs each cycle; full order books only for pair
 
 `dotnet workload install maui` grabs the newest iOS workload, which can require an Xcode the `macos-26` runner doesn't have (iOS SDK 27.0 needs Xcode 27; image had 26.6). The workflow selects Xcode 27 if present, otherwise installs from a rollback file pinned to the iOS 26.5 workload. Update the pins when the runner image gets Xcode 27.
 
+**iOS 27 scene requirement:** builds made with the iOS 27 SDK (the MacBook runner's Xcode 27.1, from build 6 on) are killed at launch on iOS 27 unless the app adopts the UIScene lifecycle (crash in `_UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`). `Platforms/iOS/Info.plist` therefore has a `UIApplicationSceneManifest` pointing at `SceneDelegate` (`MauiUISceneDelegate`) — don't remove it.
+
 ## Learning mode (in-app teaching)
 
 One phone-side switch (`Services/LearningMode.Current`, persisted in `Preferences`, toggled by the "Help" toolbar item on every tab or in Settings) shows/hides every teaching element: per-screen `HelpCard` intros (dismissible, "Reset tips" restores), `InfoButton` ⓘ → glossary entry, `HintLabel`s, `SettingHelpView`s, inline `ExplanationView`s, and Review's "Explain this pair". The 7-card `TutorialPage` shows once (`TutorialSeen`) and is replayable from Settings. All text lives in `ArbScanner.Core/Learning` — edit content there, and keep `Explainer` fee constants in sync with `server/arb/fees.py`. The server supplies `match_details` (why a pair was matched/oriented) and opportunity `k_top_size`/`p_top_size`/`days_to_close` for the explanations.

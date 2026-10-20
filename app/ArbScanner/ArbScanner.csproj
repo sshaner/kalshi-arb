@@ -12,9 +12,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <MauiXamlInflator>SourceGen</MauiXamlInflator>
-    <!-- Pinned: the MacBook runner's workload defaults to MAUI 10.0.110, and the first build made
-         with it (TestFlight build 6) crashes on launch. 10.0.20 is what builds 1-5 used. -->
-    <MauiVersion>10.0.20</MauiVersion>
 
     <ApplicationTitle>Arb Scanner</ApplicationTitle>
     <ApplicationId>org.shnr.arbscanner</ApplicationId>
